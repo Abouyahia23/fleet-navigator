@@ -114,6 +114,19 @@ export interface User {
   role: 'gestionnaire' | 'utilisateur';
 }
 
+export interface Gestionnaire {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string;
+  site: string;
+  structure: string;
+  actif: boolean;
+  dateAffectation: string;
+  observations?: string;
+}
+
 export type NavigationItem = {
   id: string;
   label: string;

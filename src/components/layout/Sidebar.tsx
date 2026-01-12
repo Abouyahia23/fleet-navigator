@@ -14,7 +14,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Truck
+  Truck,
+  UserCog
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ const navigationItems = [
   { id: 'workorders', label: 'Ordres de Travail', icon: ClipboardList },
   { id: 'expenses', label: 'Dépenses', icon: Receipt },
   { id: 'planning', label: 'Planning Entretien', icon: Calendar },
+  { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog },
   { id: 'admin', label: 'Administratif', icon: FileText },
 ];
 

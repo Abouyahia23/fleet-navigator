@@ -9,6 +9,7 @@ import { WorkOrderList } from '@/components/workorders/WorkOrderList';
 import { ExpenseList } from '@/components/expenses/ExpenseList';
 import { PlanningCalendar } from '@/components/planning/PlanningCalendar';
 import { AdminDocuments } from '@/components/admin/AdminDocuments';
+import { GestionnaireList } from '@/components/gestionnaires/GestionnaireList';
 import { mockUsers } from '@/data/mockData';
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
@@ -19,6 +20,7 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   workorders: { title: 'Ordres de Travail', subtitle: 'Entretien et réparations' },
   expenses: { title: 'Dépenses', subtitle: 'Suivi des coûts' },
   planning: { title: 'Planning', subtitle: 'Rendez-vous d\'entretien' },
+  gestionnaires: { title: 'Gestionnaires', subtitle: 'Responsables du parc automobile' },
   admin: { title: 'Administratif', subtitle: 'Documents et échéances' },
   alerts: { title: 'Alertes', subtitle: 'Notifications système' },
   search: { title: 'Recherche', subtitle: 'Recherche dans le parc' },
@@ -45,6 +47,8 @@ const Index = () => {
         return <ExpenseList />;
       case 'planning':
         return <PlanningCalendar />;
+      case 'gestionnaires':
+        return <GestionnaireList />;
       case 'admin':
         return <AdminDocuments />;
       case 'alerts':

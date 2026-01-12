@@ -1,4 +1,4 @@
-import { Vehicle, FuelEntry, RepairTicket, WorkOrder, Expense, ScheduledMaintenance, User } from '@/types/fleet';
+import { Vehicle, FuelEntry, RepairTicket, WorkOrder, Expense, ScheduledMaintenance, User, Gestionnaire } from '@/types/fleet';
 
 export const mockUsers: User[] = [
   { id: '1', nom: 'Ahmed Benali', email: 'ahmed.benali@company.dz', role: 'gestionnaire' },
@@ -277,3 +277,51 @@ export const structures = ['Direction Technique', 'Service Commercial', 'Directi
 export const prestataires = ['Garage Central', 'Hyundai Service', 'Toyota Algérie', 'Méca Pro', 'Auto Service Express'];
 export const stations = ['Naftal Hydra', 'Naftal Oran', 'Naftal Constantine', 'Naftal Blida', 'Shell Alger'];
 export const chauffeurs = ['Karim Bouzid', 'Salim Cherif', 'Omar Taleb', 'Rachid Benmalek'];
+
+export const mockGestionnaires: Gestionnaire[] = [
+  {
+    id: 'G001',
+    nom: 'Benali',
+    prenom: 'Ahmed',
+    email: 'ahmed.benali@company.dz',
+    telephone: '0555 12 34 56',
+    site: 'Alger Centre',
+    structure: 'Direction Technique',
+    actif: true,
+    dateAffectation: '2020-01-15',
+  },
+  {
+    id: 'G002',
+    nom: 'Hadj',
+    prenom: 'Samira',
+    email: 'samira.hadj@company.dz',
+    telephone: '0561 98 76 54',
+    site: 'Oran',
+    structure: 'Service Commercial',
+    actif: true,
+    dateAffectation: '2021-06-01',
+  },
+  {
+    id: 'G003',
+    nom: 'Merzouk',
+    prenom: 'Kamel',
+    email: 'kamel.merzouk@company.dz',
+    telephone: '0770 11 22 33',
+    site: 'Constantine',
+    structure: 'Service Logistique',
+    actif: true,
+    dateAffectation: '2019-03-20',
+  },
+  {
+    id: 'G004',
+    nom: 'Boudiaf',
+    prenom: 'Nadia',
+    email: 'nadia.boudiaf@company.dz',
+    telephone: '0550 44 55 66',
+    site: 'Blida',
+    structure: 'Service Maintenance',
+    actif: false,
+    dateAffectation: '2022-09-10',
+    observations: 'Congé maternité',
+  },
+];

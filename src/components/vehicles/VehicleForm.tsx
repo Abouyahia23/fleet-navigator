@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw, ArrowLeft, Car } from 'lucide-react';
+import { Save, RotateCcw, ArrowLeft, Car, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Vehicle } from '@/types/fleet';
 import { marques, modelesByMarque, sites, structures, chauffeurs } from '@/data/mockData';
 
@@ -26,8 +26,10 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     statut: 'Actif',
     dateMiseEnService: '',
     observations: '',
+    imageUrl: '',
     ...vehicle,
   });
+  const [imagePreview, setImagePreview] = useState<string>(vehicle?.imageUrl || '');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [availableModeles, setAvailableModeles] = useState<string[]>([]);
@@ -70,8 +72,33 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
       affectataire: '',
       gestionnaireParc: '',
       statut: 'Actif',
+      imageUrl: '',
     });
     setErrors({});
+    setImagePreview('');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setImagePreview(base64);
+        setFormData({ ...formData, imageUrl: base64 });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUrlChange = (url: string) => {
+    setFormData({ ...formData, imageUrl: url });
+    setImagePreview(url);
+  };
+
+  const removeImage = () => {
+    setFormData({ ...formData, imageUrl: '' });
+    setImagePreview('');
   };
 
   const categories = ['Pick-up', 'Utilitaire', 'SUV', 'Berline', 'Camion', 'Minibus'];
@@ -104,6 +131,84 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Image du Véhicule */}
+          <section>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+              Photo du Véhicule
+            </h3>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Image Preview */}
+              <div className="relative w-full md:w-64 h-48 rounded-xl border-2 border-dashed border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+                {imagePreview ? (
+                  <>
+                    <img
+                      src={imagePreview}
+                      alt="Véhicule"
+                      className="w-full h-full object-cover"
+                      onError={() => setImagePreview('')}
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center p-4">
+                    <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">Aucune image</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Options */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Télécharger une image
+                  </label>
+                  <label className="btn-secondary cursor-pointer inline-flex">
+                    <Upload className="w-4 h-4" />
+                    Choisir un fichier
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG ou WebP (max 5 Mo)
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    URL de l'image
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.imageUrl || ''}
+                    onChange={(e) => handleImageUrlChange(e.target.value)}
+                    className="input-field"
+                    placeholder="https://exemple.com/image.jpg"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Zone A - Identification */}
           <section>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">

@@ -122,55 +122,68 @@ export function VehicleList() {
         {filteredVehicles.map((vehicle) => (
           <div
             key={vehicle.id}
-            className="card-elevated p-5 hover:shadow-card-hover transition-all duration-200 animate-fade-in"
+            className="card-elevated overflow-hidden hover:shadow-card-hover transition-all duration-200 animate-fade-in"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Car className="w-6 h-6 text-primary" />
+            {/* Vehicle Image */}
+            <div className="w-full h-36 bg-muted/30 relative">
+              {vehicle.imageUrl ? (
+                <img
+                  src={vehicle.imageUrl}
+                  alt={`${vehicle.marque} ${vehicle.modele}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Car className="w-12 h-12 text-muted-foreground/30" />
                 </div>
-                <div>
-                  <p className="font-bold text-lg">{vehicle.immatriculation}</p>
-                  <p className="text-sm text-muted-foreground">{vehicle.marque} {vehicle.modele}</p>
-                </div>
-              </div>
-              <span className={cn("text-xs", getStatusBadge(vehicle.statut))}>
+              )}
+              <span className={cn("absolute top-2 right-2 text-xs", getStatusBadge(vehicle.statut))}>
                 {vehicle.statut}
               </span>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Énergie</span>
-                <span className="font-medium">{vehicle.energie}</span>
+            <div className="p-5">
+              <div className="mb-4">
+                <p className="font-bold text-lg">{vehicle.immatriculation}</p>
+                <p className="text-sm text-muted-foreground">{vehicle.marque} {vehicle.modele}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Site</span>
-                <span className="font-medium">{vehicle.site}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Affectataire</span>
-                <span className="font-medium truncate max-w-[150px]">{vehicle.affectataire}</span>
-              </div>
-              {vehicle.annee && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Année</span>
-                  <span className="font-medium">{vehicle.annee}</span>
-                </div>
-              )}
-            </div>
 
-            <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-              <button
-                onClick={() => handleEdit(vehicle)}
-                className="flex-1 btn-secondary text-sm py-2"
-              >
-                <Edit className="w-4 h-4" />
-                Modifier
-              </button>
-              <button className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors">
-                <Eye className="w-4 h-4 text-secondary-foreground" />
-              </button>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Énergie</span>
+                  <span className="font-medium">{vehicle.energie}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Site</span>
+                  <span className="font-medium">{vehicle.site}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Affectataire</span>
+                  <span className="font-medium truncate max-w-[150px]">{vehicle.affectataire}</span>
+                </div>
+                {vehicle.annee && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Année</span>
+                    <span className="font-medium">{vehicle.annee}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                <button
+                  onClick={() => handleEdit(vehicle)}
+                  className="flex-1 btn-secondary text-sm py-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Modifier
+                </button>
+                <button className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors">
+                  <Eye className="w-4 h-4 text-secondary-foreground" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

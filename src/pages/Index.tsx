@@ -10,6 +10,7 @@ import { ExpenseList } from '@/components/expenses/ExpenseList';
 import { PlanningCalendar } from '@/components/planning/PlanningCalendar';
 import { AdminDocuments } from '@/components/admin/AdminDocuments';
 import { GestionnaireList } from '@/components/gestionnaires/GestionnaireList';
+import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { mockUsers } from '@/data/mockData';
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
@@ -51,9 +52,10 @@ const Index = () => {
         return <GestionnaireList />;
       case 'admin':
         return <AdminDocuments />;
+      case 'settings':
+        return <SettingsPanel />;
       case 'alerts':
       case 'search':
-      case 'settings':
         return (
           <div className="flex items-center justify-center h-[60vh]">
             <div className="text-center">

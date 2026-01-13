@@ -21,6 +21,7 @@ export interface Vehicle {
   finCT?: string;
   finGPL?: string;
   vignetteAnnee?: number;
+  imageUrl?: string;
 }
 
 export interface FuelEntry {

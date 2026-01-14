@@ -12,10 +12,18 @@ import {
   Wrench, 
   Users,
   Fuel,
-  Tag
+  Tag,
+  Moon,
+  Sun,
+  Monitor,
+  Palette,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { marques, modelesByMarque, sites, structures, chauffeurs, prestataires } from '@/data/mockData';
+import { useTheme, colorSchemes, type ColorScheme, type Theme } from '@/hooks/use-theme';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type ReferentialType = 'marques' | 'modeles' | 'sites' | 'structures' | 'chauffeurs' | 'prestataires' | 'energies' | 'categories';
 
@@ -341,6 +349,9 @@ export function SettingsPanel() {
             </div>
           </div>
 
+          {/* Appearance Settings */}
+          <AppearanceSettings />
+
           {/* System Settings */}
           <div className="card-elevated mt-6 p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -416,6 +427,99 @@ export function SettingsPanel() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Appearance Settings Component
+function AppearanceSettings() {
+  const { theme, colorScheme, setTheme, setColorScheme, resolvedTheme } = useTheme();
+
+  const themeOptions: { value: Theme; label: string; icon: React.ElementType }[] = [
+    { value: 'light', label: 'Clair', icon: Sun },
+    { value: 'dark', label: 'Sombre', icon: Moon },
+    { value: 'system', label: 'Système', icon: Monitor },
+  ];
+
+  const colorOptions: { value: ColorScheme; label: string; color: string }[] = [
+    { value: 'blue', label: 'Bleu', color: 'hsl(215, 80%, 45%)' },
+    { value: 'green', label: 'Vert', color: 'hsl(145, 65%, 40%)' },
+    { value: 'orange', label: 'Orange', color: 'hsl(25, 95%, 50%)' },
+    { value: 'purple', label: 'Violet', color: 'hsl(270, 70%, 50%)' },
+    { value: 'red', label: 'Rouge', color: 'hsl(0, 75%, 50%)' },
+    { value: 'teal', label: 'Turquoise', color: 'hsl(175, 70%, 40%)' },
+  ];
+
+  return (
+    <div className="card-elevated mt-6 p-6">
+      <h3 className="font-semibold mb-4 flex items-center gap-2">
+        <Palette className="w-5 h-5 text-primary" />
+        Apparence
+      </h3>
+      
+      {/* Theme Mode */}
+      <div className="mb-6">
+        <Label className="text-sm font-medium mb-3 block">Mode d'affichage</Label>
+        <div className="flex flex-wrap gap-3">
+          {themeOptions.map((option) => {
+            const Icon = option.icon;
+            const isActive = theme === option.value;
+            
+            return (
+              <button
+                key={option.value}
+                onClick={() => setTheme(option.value)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 rounded-lg border-2 transition-all",
+                  isActive
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50 hover:bg-secondary"
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium">{option.label}</span>
+                {isActive && <Check className="w-4 h-4 ml-1" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Mode actuel : {resolvedTheme === 'dark' ? 'Sombre' : 'Clair'}
+        </p>
+      </div>
+
+      {/* Color Scheme */}
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Couleur principale</Label>
+        <div className="flex flex-wrap gap-3">
+          {colorOptions.map((option) => {
+            const isActive = colorScheme === option.value;
+            
+            return (
+              <button
+                key={option.value}
+                onClick={() => setColorScheme(option.value)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 rounded-lg border-2 transition-all",
+                  isActive
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50 hover:bg-secondary"
+                )}
+              >
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                  style={{ backgroundColor: option.color }}
+                />
+                <span className="font-medium">{option.label}</span>
+                {isActive && <Check className="w-4 h-4 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Cette couleur sera utilisée pour les éléments principaux de l'interface
+        </p>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { PlanningCalendar } from '@/components/planning/PlanningCalendar';
 import { AdminDocuments } from '@/components/admin/AdminDocuments';
 import { GestionnaireList } from '@/components/gestionnaires/GestionnaireList';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { StatisticsPanel } from '@/components/statistics/StatisticsPanel';
 import { mockUsers } from '@/data/mockData';
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
@@ -23,6 +24,7 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   planning: { title: 'Planning', subtitle: 'Rendez-vous d\'entretien' },
   gestionnaires: { title: 'Gestionnaires', subtitle: 'Responsables du parc automobile' },
   admin: { title: 'Administratif', subtitle: 'Documents et échéances' },
+  statistics: { title: 'États Statistiques', subtitle: 'Analyses et rapports du parc' },
   alerts: { title: 'Alertes', subtitle: 'Notifications système' },
   search: { title: 'Recherche', subtitle: 'Recherche dans le parc' },
   settings: { title: 'Paramètres', subtitle: 'Configuration système' },
@@ -52,6 +54,8 @@ const Index = () => {
         return <GestionnaireList />;
       case 'admin':
         return <AdminDocuments />;
+      case 'statistics':
+        return <StatisticsPanel />;
       case 'settings':
         return <SettingsPanel />;
       case 'alerts':

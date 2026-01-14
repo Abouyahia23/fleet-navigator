@@ -36,6 +36,7 @@ const navigationItems = [
   { id: 'planning', label: 'Planning Entretien', icon: Calendar },
   { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog },
   { id: 'admin', label: 'Administratif', icon: FileText },
+  { id: 'statistics', label: 'États Statistiques', icon: FileText },
 ];
 
 const bottomNavItems = [

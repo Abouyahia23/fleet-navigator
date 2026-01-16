@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Car, 
   Fuel, 
@@ -18,6 +19,8 @@ import {
   UserCog
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface SidebarProps {
   currentPage: string;
@@ -47,6 +50,14 @@ const bottomNavItems = [
 
 export function Sidebar({ currentPage, onNavigate, userRole, userName }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('Déconnexion réussie');
+    navigate('/auth');
+  };
 
   return (
     <aside 
@@ -144,7 +155,11 @@ export function Sidebar({ currentPage, onNavigate, userRole, userName }: Sidebar
             </div>
           )}
           {!collapsed && (
-            <button className="p-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+            <button 
+              onClick={handleSignOut}
+              className="p-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Déconnexion"
+            >
               <LogOut className="w-4 h-4" />
             </button>
           )}

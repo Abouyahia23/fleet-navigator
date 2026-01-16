@@ -12,7 +12,8 @@ import { AdminDocuments } from '@/components/admin/AdminDocuments';
 import { GestionnaireList } from '@/components/gestionnaires/GestionnaireList';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { StatisticsPanel } from '@/components/statistics/StatisticsPanel';
-import { mockUsers } from '@/data/mockData';
+import { useProfile } from '@/hooks/useProfile';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Tableau de Bord', subtitle: 'Vue d\'ensemble de votre parc automobile' },
@@ -32,7 +33,11 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [currentUser] = useState(mockUsers[0]); // Gestionnaire by default
+  const { profile } = useProfile();
+  const { role, isGestionnaire } = useUserRole();
+
+  const userName = profile ? `${profile.prenom || ''} ${profile.nom}`.trim() : 'Utilisateur';
+  const userRole = isGestionnaire ? 'gestionnaire' : 'utilisateur';
 
   const renderPage = () => {
     switch (currentPage) {
@@ -82,8 +87,8 @@ const Index = () => {
       <Sidebar
         currentPage={currentPage}
         onNavigate={setCurrentPage}
-        userRole={currentUser.role}
-        userName={currentUser.nom}
+        userRole={userRole}
+        userName={userName}
       />
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header title={config.title} subtitle={config.subtitle} />

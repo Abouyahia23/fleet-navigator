@@ -8,22 +8,19 @@ export function useAdminExists() {
   const checkAdminExists = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('role', 'admin')
-        .limit(1);
+      // Utiliser la fonction RPC sécurisée qui bypasse les RLS
+      const { data, error } = await supabase.rpc('admin_exists');
 
       if (error) {
         console.error('Error checking admin exists:', error);
-        // If there's an error, assume admin exists to show normal login
-        setAdminExists(true);
+        // Si erreur, on assume qu'il n'y a pas d'admin pour permettre la création
+        setAdminExists(false);
       } else {
-        setAdminExists(data && data.length > 0);
+        setAdminExists(data === true);
       }
     } catch (error) {
       console.error('Error checking admin exists:', error);
-      setAdminExists(true);
+      setAdminExists(false);
     } finally {
       setIsLoading(false);
     }

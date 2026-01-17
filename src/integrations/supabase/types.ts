@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          created_at: string | null
+          due_date: string | null
+          id: string
+          message: string
+          priority: string
+          status: string
+          type: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          message: string
+          priority?: string
+          status?: string
+          type: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          message?: string
+          priority?: string
+          status?: string
+          type?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chauffeurs: {
         Row: {
           actif: boolean
@@ -289,6 +333,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          actif: boolean | null
           avatar_url: string | null
           created_at: string
           email: string
@@ -300,6 +345,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actif?: boolean | null
           avatar_url?: string | null
           created_at?: string
           email: string
@@ -311,6 +357,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actif?: boolean | null
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -773,6 +820,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]

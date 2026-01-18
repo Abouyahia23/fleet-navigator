@@ -12,6 +12,7 @@ import { AdminDocuments } from '@/components/admin/AdminDocuments';
 import { GestionnaireList } from '@/components/gestionnaires/GestionnaireList';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { StatisticsPanel } from '@/components/statistics/StatisticsPanel';
+import { AlertsPanel } from '@/components/alerts/AlertsPanel';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -26,7 +27,7 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   gestionnaires: { title: 'Gestionnaires', subtitle: 'Responsables du parc automobile' },
   admin: { title: 'Administratif', subtitle: 'Documents et échéances' },
   statistics: { title: 'États Statistiques', subtitle: 'Analyses et rapports du parc' },
-  alerts: { title: 'Alertes', subtitle: 'Notifications système' },
+  alerts: { title: 'Alertes', subtitle: 'Notifications et échéances du système' },
   search: { title: 'Recherche', subtitle: 'Recherche dans le parc' },
   settings: { title: 'Paramètres', subtitle: 'Configuration système' },
 };
@@ -61,9 +62,10 @@ const Index = () => {
         return <AdminDocuments />;
       case 'statistics':
         return <StatisticsPanel />;
+      case 'alerts':
+        return <AlertsPanel />;
       case 'settings':
         return <SettingsPanel />;
-      case 'alerts':
       case 'search':
         return (
           <div className="flex items-center justify-center h-[60vh]">
@@ -91,7 +93,11 @@ const Index = () => {
         userName={userName}
       />
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header title={config.title} subtitle={config.subtitle} />
+        <Header 
+          title={config.title} 
+          subtitle={config.subtitle} 
+          onNavigateToAlerts={() => setCurrentPage('alerts')}
+        />
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {renderPage()}
         </div>

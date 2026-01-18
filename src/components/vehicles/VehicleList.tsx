@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { Plus, Search, Filter, MoreVertical, Car, Edit, Trash2, Eye } from 'lucide-react';
-import { mockVehicles, sites, structures } from '@/data/mockData';
-import { Vehicle } from '@/types/fleet';
+import { Plus, Search, Car, Edit, Eye, Loader2 } from 'lucide-react';
 import { VehicleForm } from './VehicleForm';
 import { cn } from '@/lib/utils';
+import { useVehicles, useCreateVehicle, useUpdateVehicle } from '@/hooks/useVehicles';
+import { useSites } from '@/hooks/useSites';
+import { Tables, TablesInsert } from '@/integrations/supabase/types';
+
+type Vehicle = Tables<'vehicles'>;
 
 export function VehicleList() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
+  const { data: vehicles = [], isLoading, error } = useVehicles();
+  const { data: sites = [] } = useSites();
+  const createVehicle = useCreateVehicle();
+  const updateVehicle = useUpdateVehicle();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSite, setFilterSite] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
@@ -18,16 +25,16 @@ export function VehicleList() {
       v.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.modele.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSite = !filterSite || v.site === filterSite;
+    const matchesSite = !filterSite || v.site_id === filterSite;
     const matchesStatut = !filterStatut || v.statut === filterStatut;
     return matchesSearch && matchesSite && matchesStatut;
   });
 
-  const handleSave = (vehicle: Vehicle) => {
+  const handleSave = async (vehicleData: TablesInsert<'vehicles'>) => {
     if (editingVehicle) {
-      setVehicles(vehicles.map(v => v.id === vehicle.id ? vehicle : v));
+      await updateVehicle.mutateAsync({ id: editingVehicle.id, ...vehicleData });
     } else {
-      setVehicles([...vehicles, { ...vehicle, id: `V${String(vehicles.length + 1).padStart(3, '0')}` }]);
+      await createVehicle.mutateAsync(vehicleData);
     }
     setShowForm(false);
     setEditingVehicle(null);
@@ -51,11 +58,33 @@ export function VehicleList() {
     }
   };
 
+  const getSiteName = (siteId: string | null) => {
+    if (!siteId) return 'Non assigné';
+    const site = sites.find(s => s.id === siteId);
+    return site?.nom || 'Inconnu';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-destructive">
+        <p>Erreur lors du chargement des véhicules</p>
+      </div>
+    );
+  }
+
   if (showForm) {
     return (
       <VehicleForm
-        vehicle={editingVehicle}
-        onSave={handleSave}
+        vehicle={editingVehicle as any}
+        onSave={handleSave as any}
         onCancel={() => {
           setShowForm(false);
           setEditingVehicle(null);
@@ -101,7 +130,7 @@ export function VehicleList() {
           >
             <option value="">Tous les sites</option>
             {sites.map(site => (
-              <option key={site} value={site}>{site}</option>
+              <option key={site.id} value={site.id}>{site.nom}</option>
             ))}
           </select>
           <select
@@ -126,9 +155,9 @@ export function VehicleList() {
           >
             {/* Vehicle Image */}
             <div className="w-full h-36 bg-muted/30 relative">
-              {vehicle.imageUrl ? (
+              {vehicle.image_url ? (
                 <img
-                  src={vehicle.imageUrl}
+                  src={vehicle.image_url}
                   alt={`${vehicle.marque} ${vehicle.modele}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -158,11 +187,11 @@ export function VehicleList() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Site</span>
-                  <span className="font-medium">{vehicle.site}</span>
+                  <span className="font-medium">{getSiteName(vehicle.site_id)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Affectataire</span>
-                  <span className="font-medium truncate max-w-[150px]">{vehicle.affectataire}</span>
+                  <span className="font-medium truncate max-w-[150px]">{vehicle.affectataire || '-'}</span>
                 </div>
                 {vehicle.annee && (
                   <div className="flex justify-between">

@@ -1,38 +1,43 @@
-import { Car, Fuel, Wrench, Receipt, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Car, Fuel, Wrench, AlertTriangle, Clock, Loader2 } from 'lucide-react';
 import { StatCard } from './StatCard';
-import { mockVehicles, mockFuelEntries, mockRepairTickets, mockWorkOrders, mockExpenses } from '@/data/mockData';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useRepairTickets } from '@/hooks/useRepairTickets';
+import { useWorkOrders } from '@/hooks/useWorkOrders';
+import { useVehicles } from '@/hooks/useVehicles';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const fuelData = [
-  { month: 'Jan', depense: 45000 },
-  { month: 'Fév', depense: 52000 },
-  { month: 'Mar', depense: 48000 },
-  { month: 'Avr', depense: 61000 },
-  { month: 'Mai', depense: 55000 },
-  { month: 'Juin', depense: 67000 },
-];
-
-const vehicleStatusData = [
-  { name: 'Actif', value: mockVehicles.filter(v => v.statut === 'Actif').length, color: 'hsl(145, 65%, 40%)' },
-  { name: 'Immobilisé', value: mockVehicles.filter(v => v.statut === 'Immobilisé').length, color: 'hsl(38, 92%, 50%)' },
-  { name: 'Sorti', value: mockVehicles.filter(v => v.statut === 'Sorti').length, color: 'hsl(0, 75%, 55%)' },
-];
-
 export function Dashboard() {
-  const totalVehicles = mockVehicles.length;
-  const activeVehicles = mockVehicles.filter(v => v.statut === 'Actif').length;
-  const openTickets = mockRepairTickets.filter(t => t.statut !== 'Clôturé').length;
-  const totalFuelExpense = mockFuelEntries.reduce((sum, f) => sum + f.montant, 0);
-  const totalExpenses = mockExpenses.reduce((sum, e) => sum + e.montant, 0);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: tickets = [] } = useRepairTickets();
+  const { data: workOrders = [] } = useWorkOrders();
+  const { data: vehicles = [] } = useVehicles();
 
-  const upcomingAlerts = mockVehicles.filter(v => {
-    const today = new Date();
-    const assurance = v.finAssurance ? new Date(v.finAssurance) : null;
-    const ct = v.finCT ? new Date(v.finCT) : null;
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    return (assurance && assurance.getTime() - today.getTime() < thirtyDays) ||
-           (ct && ct.getTime() - today.getTime() < thirtyDays);
-  }).length;
+  if (statsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const vehicleStatusData = [
+    { name: 'Actif', value: vehicles.filter(v => v.statut === 'Actif').length, color: 'hsl(145, 65%, 40%)' },
+    { name: 'Immobilisé', value: vehicles.filter(v => v.statut === 'Immobilisé').length, color: 'hsl(38, 92%, 50%)' },
+    { name: 'Sorti', value: vehicles.filter(v => v.statut === 'Sorti').length, color: 'hsl(0, 75%, 55%)' },
+  ];
+
+  // Données pour le graphique (à améliorer avec vraies données)
+  const fuelData = [
+    { month: 'Jan', depense: 45000 },
+    { month: 'Fév', depense: 52000 },
+    { month: 'Mar', depense: 48000 },
+    { month: 'Avr', depense: 61000 },
+    { month: 'Mai', depense: 55000 },
+    { month: 'Juin', depense: 67000 },
+  ];
+
+  const openTickets = tickets.filter(t => t.statut !== 'Clôturé');
+  const openWorkOrders = workOrders.filter(wo => wo.statut !== 'Clôturé');
 
   return (
     <div className="p-6 space-y-6">
@@ -40,30 +45,30 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Véhicules"
-          value={totalVehicles}
-          subtitle={`${activeVehicles} actifs`}
+          value={stats?.totalVehicles || 0}
+          subtitle={`${stats?.activeVehicles || 0} actifs`}
           icon={Car}
           variant="primary"
         />
         <StatCard
           title="Tickets Ouverts"
-          value={openTickets}
+          value={stats?.openTickets || 0}
           subtitle="En attente de traitement"
           icon={Wrench}
-          variant={openTickets > 0 ? 'warning' : 'success'}
+          variant={(stats?.openTickets || 0) > 0 ? 'warning' : 'success'}
         />
         <StatCard
           title="Carburant (Mois)"
-          value={`${(totalFuelExpense / 1000).toFixed(0)}K DZD`}
+          value={`${((stats?.monthlyFuelCost || 0) / 1000).toFixed(0)}K DZD`}
           icon={Fuel}
           trend={{ value: 12, positive: false }}
         />
         <StatCard
           title="Alertes Admin"
-          value={upcomingAlerts}
+          value={stats?.alertsCount || 0}
           subtitle="Échéances < 30 jours"
           icon={AlertTriangle}
-          variant={upcomingAlerts > 0 ? 'accent' : 'default'}
+          variant={(stats?.alertsCount || 0) > 0 ? 'accent' : 'default'}
         />
       </div>
 
@@ -138,10 +143,10 @@ export function Dashboard() {
         <div className="card-elevated p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Tickets Récents</h3>
-            <span className="badge-info">{mockRepairTickets.length} tickets</span>
+            <span className="badge-info">{tickets.length} tickets</span>
           </div>
           <div className="space-y-3">
-            {mockRepairTickets.slice(0, 4).map((ticket) => (
+            {openTickets.slice(0, 4).map((ticket) => (
               <div 
                 key={ticket.id} 
                 className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
@@ -155,7 +160,7 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{ticket.symptome}</p>
-                  <p className="text-xs text-muted-foreground">{ticket.immatriculation} • {ticket.site}</p>
+                  <p className="text-xs text-muted-foreground">{ticket.numero}</p>
                 </div>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                   ticket.statut === 'Ouvert' ? 'badge-warning' :
@@ -166,17 +171,20 @@ export function Dashboard() {
                 </span>
               </div>
             ))}
+            {openTickets.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">Aucun ticket ouvert</p>
+            )}
           </div>
         </div>
 
         {/* Upcoming Maintenance */}
         <div className="card-elevated p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Prochains RDV Entretien</h3>
-            <span className="badge-info">Cette semaine</span>
+            <h3 className="text-lg font-semibold">Ordres de Travail en Cours</h3>
+            <span className="badge-info">{openWorkOrders.length} OT</span>
           </div>
           <div className="space-y-3">
-            {mockWorkOrders.filter(wo => wo.statut !== 'Clôturé').slice(0, 4).map((wo) => (
+            {openWorkOrders.slice(0, 4).map((wo) => (
               <div 
                 key={wo.id} 
                 className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
@@ -186,12 +194,10 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{wo.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {wo.immatriculation} • {wo.prestataire}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{wo.numero}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">{wo.dateRDV || 'Non planifié'}</p>
+                  <p className="text-sm font-medium">{wo.date_rdv || 'Non planifié'}</p>
                   <span className={`text-xs ${
                     wo.type === 'Préventif' ? 'text-success' : 'text-warning'
                   }`}>
@@ -200,6 +206,9 @@ export function Dashboard() {
                 </div>
               </div>
             ))}
+            {openWorkOrders.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">Aucun OT en cours</p>
+            )}
           </div>
         </div>
       </div>

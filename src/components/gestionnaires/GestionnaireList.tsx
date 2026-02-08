@@ -9,95 +9,164 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Edit, Mail, Phone, Building2, MapPin, UserCog } from 'lucide-react';
-import { mockGestionnaires, sites, structures } from '@/data/mockData';
-import { Gestionnaire } from '@/types/fleet';
+import { Plus, Search, Edit, Mail, Phone, Building2, MapPin, UserCog, Trash2, Loader2 } from 'lucide-react';
+import { useGestionnaires, useCreateGestionnaire, useUpdateGestionnaire, useDeleteGestionnaire, useToggleGestionnaireActive } from '@/hooks/useGestionnaires';
+import { useUsers } from '@/hooks/useUsers';
+import { useSites } from '@/hooks/useSites';
+import { useStructures } from '@/hooks/useStructures';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface FormData {
+  profile_id: string;
+  site_id: string | null;
+  structure_id: string | null;
+  actif: boolean;
+  date_affectation: string;
+  observations: string;
+}
 
 export function GestionnaireList() {
-  const [gestionnaires, setGestionnaires] = useState<Gestionnaire[]>(mockGestionnaires);
+  const { data: gestionnaires = [], isLoading } = useGestionnaires();
+  const { data: users = [] } = useUsers();
+  const { data: sites = [] } = useSites();
+  const { data: structures = [] } = useStructures();
+  
+  const createGestionnaire = useCreateGestionnaire();
+  const updateGestionnaire = useUpdateGestionnaire();
+  const deleteGestionnaire = useDeleteGestionnaire();
+  const toggleActive = useToggleGestionnaireActive();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSite, setFilterSite] = useState<string>('all');
   const [filterActif, setFilterActif] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGestionnaire, setEditingGestionnaire] = useState<Gestionnaire | null>(null);
-  const [formData, setFormData] = useState<Partial<Gestionnaire>>({
-    nom: '',
-    prenom: '',
-    email: '',
-    telephone: '',
-    site: '',
-    structure: '',
+  const [editingGestionnaire, setEditingGestionnaire] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    profile_id: '',
+    site_id: null,
+    structure_id: null,
     actif: true,
-    dateAffectation: new Date().toISOString().split('T')[0],
+    date_affectation: new Date().toISOString().split('T')[0],
     observations: '',
   });
 
+  // Filtrer les utilisateurs qui ne sont pas encore gestionnaires
+  const availableUsers = users.filter(user => 
+    !gestionnaires.some(g => g.profile_id === user.id) || 
+    (editingGestionnaire && gestionnaires.find(g => g.id === editingGestionnaire)?.profile_id === user.id)
+  );
+
   const filteredGestionnaires = gestionnaires.filter((g) => {
     const matchesSearch = 
-      g.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      g.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      g.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSite = filterSite === 'all' || g.site === filterSite;
+      g.profile?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.profile?.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.profile?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSite = filterSite === 'all' || g.site_id === filterSite;
     const matchesActif = filterActif === 'all' || 
       (filterActif === 'actif' && g.actif) || 
       (filterActif === 'inactif' && !g.actif);
     return matchesSearch && matchesSite && matchesActif;
   });
 
-  const handleOpenDialog = (gestionnaire?: Gestionnaire) => {
-    if (gestionnaire) {
-      setEditingGestionnaire(gestionnaire);
-      setFormData(gestionnaire);
+  const handleOpenDialog = (gestionnaireId?: string) => {
+    if (gestionnaireId) {
+      const gestionnaire = gestionnaires.find(g => g.id === gestionnaireId);
+      if (gestionnaire) {
+        setEditingGestionnaire(gestionnaireId);
+        setFormData({
+          profile_id: gestionnaire.profile_id,
+          site_id: gestionnaire.site_id,
+          structure_id: gestionnaire.structure_id,
+          actif: gestionnaire.actif,
+          date_affectation: gestionnaire.date_affectation,
+          observations: gestionnaire.observations || '',
+        });
+      }
     } else {
       setEditingGestionnaire(null);
       setFormData({
-        nom: '',
-        prenom: '',
-        email: '',
-        telephone: '',
-        site: '',
-        structure: '',
+        profile_id: '',
+        site_id: null,
+        structure_id: null,
         actif: true,
-        dateAffectation: new Date().toISOString().split('T')[0],
+        date_affectation: new Date().toISOString().split('T')[0],
         observations: '',
       });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (editingGestionnaire) {
-      setGestionnaires(gestionnaires.map(g => 
-        g.id === editingGestionnaire.id 
-          ? { ...g, ...formData } as Gestionnaire
-          : g
-      ));
-    } else {
-      const newGestionnaire: Gestionnaire = {
-        id: `G${String(gestionnaires.length + 1).padStart(3, '0')}`,
-        nom: formData.nom || '',
-        prenom: formData.prenom || '',
-        email: formData.email || '',
-        telephone: formData.telephone || '',
-        site: formData.site || '',
-        structure: formData.structure || '',
-        actif: formData.actif ?? true,
-        dateAffectation: formData.dateAffectation || new Date().toISOString().split('T')[0],
-        observations: formData.observations,
-      };
-      setGestionnaires([...gestionnaires, newGestionnaire]);
+  const handleSubmit = async () => {
+    try {
+      if (editingGestionnaire) {
+        await updateGestionnaire.mutateAsync({
+          id: editingGestionnaire,
+          site_id: formData.site_id,
+          structure_id: formData.structure_id,
+          actif: formData.actif,
+          date_affectation: formData.date_affectation,
+          observations: formData.observations || null,
+        });
+        toast.success('Gestionnaire mis à jour');
+      } else {
+        await createGestionnaire.mutateAsync({
+          profile_id: formData.profile_id,
+          site_id: formData.site_id,
+          structure_id: formData.structure_id,
+          actif: formData.actif,
+          date_affectation: formData.date_affectation,
+          observations: formData.observations || null,
+        });
+        toast.success('Gestionnaire créé');
+      }
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error('Erreur lors de l\'opération');
+      console.error(error);
     }
-    setIsDialogOpen(false);
   };
 
-  const toggleActif = (id: string) => {
-    setGestionnaires(gestionnaires.map(g => 
-      g.id === id ? { ...g, actif: !g.actif } : g
-    ));
+  const handleToggleActif = async (id: string, currentActif: boolean) => {
+    try {
+      await toggleActive.mutateAsync({ id, actif: !currentActif });
+      toast.success(currentActif ? 'Gestionnaire désactivé' : 'Gestionnaire activé');
+    } catch (error) {
+      toast.error('Erreur lors de la modification');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteGestionnaire.mutateAsync(deleteConfirmId);
+      toast.success('Gestionnaire supprimé');
+      setDeleteConfirmId(null);
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
   };
 
   const actifs = gestionnaires.filter(g => g.actif).length;
   const inactifs = gestionnaires.filter(g => !g.actif).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -156,70 +225,57 @@ export function GestionnaireList() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  {!editingGestionnaire && (
                     <div className="space-y-2">
-                      <Label>Nom *</Label>
-                      <Input 
-                        value={formData.nom || ''} 
-                        onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                        placeholder="Nom de famille"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Prénom *</Label>
-                      <Input 
-                        value={formData.prenom || ''} 
-                        onChange={(e) => setFormData({...formData, prenom: e.target.value})}
-                        placeholder="Prénom"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email *</Label>
-                    <Input 
-                      type="email"
-                      value={formData.email || ''} 
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder="email@company.dz"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Téléphone *</Label>
-                    <Input 
-                      value={formData.telephone || ''} 
-                      onChange={(e) => setFormData({...formData, telephone: e.target.value})}
-                      placeholder="0555 12 34 56"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Site *</Label>
+                      <Label>Utilisateur *</Label>
                       <Select 
-                        value={formData.site || ''} 
-                        onValueChange={(v) => setFormData({...formData, site: v})}
+                        value={formData.profile_id} 
+                        onValueChange={(v) => setFormData({...formData, profile_id: v})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un utilisateur" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.prenom} {user.nom} - {user.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Site</Label>
+                      <Select 
+                        value={formData.site_id || 'none'} 
+                        onValueChange={(v) => setFormData({...formData, site_id: v === 'none' ? null : v})}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">Aucun</SelectItem>
                           {sites.map((site) => (
-                            <SelectItem key={site} value={site}>{site}</SelectItem>
+                            <SelectItem key={site.id} value={site.id}>{site.nom}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Structure *</Label>
+                      <Label>Structure</Label>
                       <Select 
-                        value={formData.structure || ''} 
-                        onValueChange={(v) => setFormData({...formData, structure: v})}
+                        value={formData.structure_id || 'none'} 
+                        onValueChange={(v) => setFormData({...formData, structure_id: v === 'none' ? null : v})}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">Aucune</SelectItem>
                           {structures.map((structure) => (
-                            <SelectItem key={structure} value={structure}>{structure}</SelectItem>
+                            <SelectItem key={structure.id} value={structure.id}>{structure.nom}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -229,13 +285,13 @@ export function GestionnaireList() {
                     <Label>Date d'affectation</Label>
                     <Input 
                       type="date"
-                      value={formData.dateAffectation || ''} 
-                      onChange={(e) => setFormData({...formData, dateAffectation: e.target.value})}
+                      value={formData.date_affectation} 
+                      onChange={(e) => setFormData({...formData, date_affectation: e.target.value})}
                     />
                   </div>
                   <div className="flex items-center gap-3">
                     <Switch 
-                      checked={formData.actif ?? true} 
+                      checked={formData.actif} 
                       onCheckedChange={(checked) => setFormData({...formData, actif: checked})}
                     />
                     <Label>Actif</Label>
@@ -243,7 +299,7 @@ export function GestionnaireList() {
                   <div className="space-y-2">
                     <Label>Observations</Label>
                     <Textarea 
-                      value={formData.observations || ''} 
+                      value={formData.observations} 
                       onChange={(e) => setFormData({...formData, observations: e.target.value})}
                       placeholder="Notes ou remarques..."
                       rows={2}
@@ -255,8 +311,11 @@ export function GestionnaireList() {
                   <Button 
                     className="gradient-primary text-primary-foreground"
                     onClick={handleSubmit}
-                    disabled={!formData.nom || !formData.prenom || !formData.email || !formData.telephone || !formData.site || !formData.structure}
+                    disabled={(!editingGestionnaire && !formData.profile_id) || createGestionnaire.isPending || updateGestionnaire.isPending}
                   >
+                    {(createGestionnaire.isPending || updateGestionnaire.isPending) && (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    )}
                     {editingGestionnaire ? 'Mettre à jour' : 'Créer'}
                   </Button>
                 </div>
@@ -283,7 +342,7 @@ export function GestionnaireList() {
               <SelectContent>
                 <SelectItem value="all">Tous les sites</SelectItem>
                 {sites.map((site) => (
-                  <SelectItem key={site} value={site}>{site}</SelectItem>
+                  <SelectItem key={site.id} value={site.id}>{site.nom}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -319,12 +378,12 @@ export function GestionnaireList() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-sm font-medium text-primary">
-                            {gestionnaire.prenom[0]}{gestionnaire.nom[0]}
+                            {gestionnaire.profile?.prenom?.[0] || ''}{gestionnaire.profile?.nom?.[0] || ''}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium">{gestionnaire.prenom} {gestionnaire.nom}</p>
-                          <p className="text-xs text-muted-foreground">{gestionnaire.id}</p>
+                          <p className="font-medium">{gestionnaire.profile?.prenom} {gestionnaire.profile?.nom}</p>
+                          <p className="text-xs text-muted-foreground">ID: {gestionnaire.id.slice(0, 8)}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -332,11 +391,11 @@ export function GestionnaireList() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="w-3 h-3 text-muted-foreground" />
-                          <span>{gestionnaire.email}</span>
+                          <span>{gestionnaire.profile?.email || '-'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="w-3 h-3 text-muted-foreground" />
-                          <span>{gestionnaire.telephone}</span>
+                          <span>{gestionnaire.profile?.telephone || '-'}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -344,25 +403,25 @@ export function GestionnaireList() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <MapPin className="w-3 h-3 text-muted-foreground" />
-                          <span>{gestionnaire.site}</span>
+                          <span>{gestionnaire.site?.nom || '-'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Building2 className="w-3 h-3 text-muted-foreground" />
-                          <span>{gestionnaire.structure}</span>
+                          <span>{gestionnaire.structure?.nom || '-'}</span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="text-sm">{new Date(gestionnaire.dateAffectation).toLocaleDateString('fr-FR')}</p>
+                      <p className="text-sm">{new Date(gestionnaire.date_affectation).toLocaleDateString('fr-FR')}</p>
                       {gestionnaire.observations && (
-                        <p className="text-xs text-muted-foreground">{gestionnaire.observations}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[150px]">{gestionnaire.observations}</p>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch 
                           checked={gestionnaire.actif} 
-                          onCheckedChange={() => toggleActif(gestionnaire.id)}
+                          onCheckedChange={() => handleToggleActif(gestionnaire.id, gestionnaire.actif)}
                         />
                         <Badge variant={gestionnaire.actif ? 'default' : 'secondary'}>
                           {gestionnaire.actif ? 'Actif' : 'Inactif'}
@@ -370,13 +429,23 @@ export function GestionnaireList() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleOpenDialog(gestionnaire)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleOpenDialog(gestionnaire.id)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteConfirmId(gestionnaire.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -392,6 +461,24 @@ export function GestionnaireList() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce gestionnaire ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

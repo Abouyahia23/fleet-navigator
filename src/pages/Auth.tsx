@@ -3,16 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminExists } from '@/hooks/useAdminExists';
 import { AdminSetupForm } from '@/components/auth/AdminSetupForm';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Truck, Loader2 } from 'lucide-react';
+import { Truck, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const { signIn, signUp } = useAuth();
   const { adminExists, isLoading: checkingAdmin, refetch } = useAdminExists();
   const navigate = useNavigate();
@@ -64,6 +66,31 @@ export default function Auth() {
     setIsLoading(false);
   };
 
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+
+    if (error) {
+      toast.error('Erreur', {
+        description: error.message,
+      });
+    } else {
+      toast.success('Email envoyé!', {
+        description: 'Vérifiez votre boîte de réception pour réinitialiser votre mot de passe.',
+      });
+      setShowResetPassword(false);
+    }
+
+    setIsLoading(false);
+  };
+
   // Show loading while checking for admin
   if (checkingAdmin) {
     return (
@@ -81,6 +108,58 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
         <AdminSetupForm onComplete={refetch} />
+      </div>
+    );
+  }
+
+  // Show password reset form
+  if (showResetPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center mb-4">
+              <Truck className="w-8 h-8 text-accent-foreground" />
+            </div>
+            <CardTitle className="text-2xl">Mot de passe oublié</CardTitle>
+            <CardDescription>Entrez votre email pour recevoir un lien de réinitialisation</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  name="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  'Envoyer le lien'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setShowResetPassword(false)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Retour à la connexion
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
@@ -135,6 +214,14 @@ export default function Auth() {
                   ) : (
                     'Se connecter'
                   )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm"
+                  onClick={() => setShowResetPassword(true)}
+                >
+                  Mot de passe oublié ?
                 </Button>
               </form>
             </TabsContent>

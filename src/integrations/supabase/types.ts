@@ -611,10 +611,57 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_assignment_history: {
+        Row: {
+          affectataire: string
+          affectataire_type: Database["public"]["Enums"]["affectataire_type"]
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string | null
+          id: string
+          observations: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          affectataire: string
+          affectataire_type: Database["public"]["Enums"]["affectataire_type"]
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          observations?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          affectataire?: string
+          affectataire_type?: Database["public"]["Enums"]["affectataire_type"]
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          observations?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_assignment_history_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           affectataire: string | null
           affectataire_email: string | null
+          affectataire_type:
+            | Database["public"]["Enums"]["affectataire_type"]
+            | null
           annee: number | null
           categorie: string | null
           chauffeur_referent_id: string | null
@@ -641,6 +688,9 @@ export type Database = {
         Insert: {
           affectataire?: string | null
           affectataire_email?: string | null
+          affectataire_type?:
+            | Database["public"]["Enums"]["affectataire_type"]
+            | null
           annee?: number | null
           categorie?: string | null
           chauffeur_referent_id?: string | null
@@ -667,6 +717,9 @@ export type Database = {
         Update: {
           affectataire?: string | null
           affectataire_email?: string | null
+          affectataire_type?:
+            | Database["public"]["Enums"]["affectataire_type"]
+            | null
           annee?: number | null
           categorie?: string | null
           chauffeur_referent_id?: string | null
@@ -836,6 +889,11 @@ export type Database = {
         | "Diagnostic"
         | "Devis"
         | "Réparation"
+      affectataire_type:
+        | "Chauffeur"
+        | "Cadre"
+        | "Parc auto de direction"
+        | "Parc auto centrale"
       expense_category:
         | "Pièces"
         | "Main d'œuvre"
@@ -985,6 +1043,12 @@ export const Constants = {
         "Diagnostic",
         "Devis",
         "Réparation",
+      ],
+      affectataire_type: [
+        "Chauffeur",
+        "Cadre",
+        "Parc auto de direction",
+        "Parc auto centrale",
       ],
       expense_category: [
         "Pièces",

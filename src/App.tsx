@@ -6,17 +6,24 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useScrollbarSettings } from "@/hooks/useScrollbarSettings";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function ScrollbarInit() {
+  useScrollbarSettings();
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
         <TooltipProvider>
+          <ScrollbarInit />
           <Toaster />
           <Sonner />
           <BrowserRouter>

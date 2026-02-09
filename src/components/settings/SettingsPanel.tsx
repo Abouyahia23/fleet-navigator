@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme, colorSchemes, type ColorScheme, type Theme } from '@/hooks/use-theme';
+import { useScrollbarSettings, type ScrollbarMode, type ScrollbarColor } from '@/hooks/useScrollbarSettings';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -400,6 +401,7 @@ export function SettingsPanel() {
 // Appearance Settings Component
 function AppearanceSettings() {
   const { theme, colorScheme, setTheme, setColorScheme } = useTheme();
+  const { mode: scrollbarMode, color: scrollbarColor, setMode: setScrollbarMode, setColor: setScrollbarColor } = useScrollbarSettings();
 
   const themeOptions: { value: Theme; label: string; icon: React.ElementType }[] = [
     { value: 'light', label: 'Clair', icon: Sun },
@@ -416,15 +418,28 @@ function AppearanceSettings() {
     { value: 'teal', label: 'Turquoise', color: 'hsl(175, 70%, 40%)' },
   ];
 
+  const scrollbarModeOptions: { value: ScrollbarMode; label: string }[] = [
+    { value: 'auto', label: 'Automatique' },
+    { value: 'always', label: 'Toujours visible' },
+    { value: 'thin', label: 'Fine' },
+  ];
+
+  const scrollbarColorOptions: { value: ScrollbarColor; label: string; color: string }[] = [
+    { value: 'default', label: 'Par défaut', color: 'hsl(215, 15%, 45%)' },
+    { value: 'primary', label: 'Primaire', color: 'hsl(215, 80%, 45%)' },
+    { value: 'accent', label: 'Accent', color: 'hsl(25, 95%, 55%)' },
+    { value: 'muted', label: 'Discrète', color: 'hsl(215, 15%, 75%)' },
+  ];
+
   return (
-    <div className="card-elevated p-6">
+    <div className="card-elevated p-6 space-y-8">
       <h3 className="font-semibold mb-4 flex items-center gap-2">
         <Palette className="w-5 h-5 text-primary" />
         Apparence
       </h3>
       
       {/* Theme Selection */}
-      <div className="mb-6">
+      <div>
         <Label className="text-sm font-medium mb-3 block">Thème</Label>
         <div className="flex gap-3">
           {themeOptions.map((option) => {
@@ -470,6 +485,50 @@ function AppearanceSettings() {
               />
               <span className="text-sm">{option.label}</span>
               {colorScheme === option.value && <Check className="w-4 h-4 text-primary" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Scrollbar Settings */}
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Barre de défilement</Label>
+        <div className="flex flex-wrap gap-3">
+          {scrollbarModeOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setScrollbarMode(option.value)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all",
+                scrollbarMode === option.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <span className="text-sm">{option.label}</span>
+              {scrollbarMode === option.value && <Check className="w-4 h-4" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Couleur de la barre de défilement</Label>
+        <div className="flex flex-wrap gap-3">
+          {scrollbarColorOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setScrollbarColor(option.value)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all",
+                scrollbarColor === option.value
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: option.color }} />
+              <span className="text-sm">{option.label}</span>
+              {scrollbarColor === option.value && <Check className="w-4 h-4 text-primary" />}
             </button>
           ))}
         </div>

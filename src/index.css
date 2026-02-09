@@ -245,3 +245,72 @@
     background-color: hsl(var(--muted-foreground) / 0.5);
   }
 }
+
+/* Scrollbar modes */
+.scrollbar-always *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-always * {
+  scrollbar-width: auto;
+  overflow: auto;
+}
+.scrollbar-always *::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 5px;
+}
+.scrollbar-always *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.scrollbar-always *::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.scrollbar-thin-mode *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scrollbar-thin-mode * {
+  scrollbar-width: thin;
+}
+.scrollbar-thin-mode *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin-mode *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 2px;
+}
+
+/* Scrollbar colors */
+.scrollbar-color-primary *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--primary) / 0.4) !important;
+}
+.scrollbar-color-primary *::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary) / 0.6) !important;
+}
+.scrollbar-color-primary * {
+  scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+}
+
+.scrollbar-color-accent *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--accent) / 0.4) !important;
+}
+.scrollbar-color-accent *::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--accent) / 0.6) !important;
+}
+.scrollbar-color-accent * {
+  scrollbar-color: hsl(var(--accent) / 0.4) transparent;
+}
+
+.scrollbar-color-muted *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.15) !important;
+}
+.scrollbar-color-muted *::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.3) !important;
+}
+.scrollbar-color-muted * {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.15) transparent;
+}

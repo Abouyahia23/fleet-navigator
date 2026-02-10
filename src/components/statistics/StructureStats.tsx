@@ -3,63 +3,56 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { mockVehicles, mockFuelEntries, mockExpenses, mockRepairTickets } from '@/data/mockData';
-import { sites, structures } from '@/data/mockData';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useFuelEntries } from '@/hooks/useFuelEntries';
+import { useExpenses } from '@/hooks/useExpenses';
+import { useRepairTickets } from '@/hooks/useRepairTickets';
+import { useSites } from '@/hooks/useSites';
+import { useStructures } from '@/hooks/useStructures';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Building2, MapPin } from 'lucide-react';
+import { Building2, MapPin, Loader2 } from 'lucide-react';
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export function StructureStats() {
   const [view, setView] = useState<'site' | 'structure'>('site');
 
-  // Calculate stats by site
-  const siteStats = sites.map(site => {
-    const siteVehicles = mockVehicles.filter(v => v.site === site);
-    const vehicleIds = siteVehicles.map(v => v.id);
-    
-    const fuelCost = mockFuelEntries.filter(e => vehicleIds.includes(e.vehicleId)).reduce((s, e) => s + e.montant, 0);
-    const expenseCost = mockExpenses.filter(e => vehicleIds.includes(e.vehicleId)).reduce((s, e) => s + e.montant, 0);
-    const tickets = mockRepairTickets.filter(t => vehicleIds.includes(t.vehicleId)).length;
-    const activeVehicles = siteVehicles.filter(v => v.statut === 'Actif').length;
+  const { data: vehicles = [], isLoading: vLoading } = useVehicles();
+  const { data: fuelEntries = [] } = useFuelEntries();
+  const { data: expenses = [] } = useExpenses();
+  const { data: tickets = [] } = useRepairTickets();
+  const { data: sites = [] } = useSites();
+  const { data: structures = [] } = useStructures();
 
-    return {
-      name: site,
-      vehicules: siteVehicles.length,
-      actifs: activeVehicles,
-      carburant: fuelCost,
-      depenses: expenseCost,
-      total: fuelCost + expenseCost,
-      tickets,
-      coutMoyen: siteVehicles.length > 0 ? (fuelCost + expenseCost) / siteVehicles.length : 0,
-    };
-  }).filter(s => s.vehicules > 0).sort((a, b) => b.total - a.total);
+  if (vLoading) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
 
-  // Calculate stats by structure
-  const structureStats = structures.map(structure => {
-    const structVehicles = mockVehicles.filter(v => v.structure === structure);
-    const vehicleIds = structVehicles.map(v => v.id);
-    
-    const fuelCost = mockFuelEntries.filter(e => vehicleIds.includes(e.vehicleId)).reduce((s, e) => s + e.montant, 0);
-    const expenseCost = mockExpenses.filter(e => vehicleIds.includes(e.vehicleId)).reduce((s, e) => s + e.montant, 0);
-    const tickets = mockRepairTickets.filter(t => vehicleIds.includes(t.vehicleId)).length;
-    const activeVehicles = structVehicles.filter(v => v.statut === 'Actif').length;
+  const computeStats = (groupKey: 'site_id' | 'structure_id', items: { id: string; nom: string }[]) => {
+    return items.map(item => {
+      const groupVehicles = vehicles.filter(v => v[groupKey] === item.id);
+      const vehicleIds = groupVehicles.map(v => v.id);
+      const fuelCost = fuelEntries.filter(e => vehicleIds.includes(e.vehicle_id)).reduce((s, e) => s + Number(e.montant), 0);
+      const expenseCost = expenses.filter(e => vehicleIds.includes(e.vehicle_id)).reduce((s, e) => s + Number(e.montant), 0);
+      const ticketCount = tickets.filter(t => vehicleIds.includes(t.vehicle_id)).length;
+      const activeVehicles = groupVehicles.filter(v => v.statut === 'Actif').length;
+      return {
+        name: item.nom,
+        vehicules: groupVehicles.length,
+        actifs: activeVehicles,
+        carburant: fuelCost,
+        depenses: expenseCost,
+        total: fuelCost + expenseCost,
+        tickets: ticketCount,
+        coutMoyen: groupVehicles.length > 0 ? (fuelCost + expenseCost) / groupVehicles.length : 0,
+      };
+    }).filter(s => s.vehicules > 0).sort((a, b) => b.total - a.total);
+  };
 
-    return {
-      name: structure,
-      vehicules: structVehicles.length,
-      actifs: activeVehicles,
-      carburant: fuelCost,
-      depenses: expenseCost,
-      total: fuelCost + expenseCost,
-      tickets,
-      coutMoyen: structVehicles.length > 0 ? (fuelCost + expenseCost) / structVehicles.length : 0,
-    };
-  }).filter(s => s.vehicules > 0).sort((a, b) => b.total - a.total);
-
+  const siteStats = computeStats('site_id', sites);
+  const structureStats = computeStats('structure_id', structures);
   const currentStats = view === 'site' ? siteStats : structureStats;
 
-  // Data for charts
   const vehicleDistribution = currentStats.map(s => ({
     name: s.name.length > 15 ? s.name.substring(0, 15) + '...' : s.name,
     value: s.vehicules,
@@ -71,47 +64,29 @@ export function StructureStats() {
     depenses: s.depenses,
   }));
 
+  const tooltipStyle = { backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' };
+
   return (
     <div className="space-y-6">
-      {/* View Toggle */}
       <Card>
         <CardContent className="pt-6">
           <Tabs value={view} onValueChange={(v) => setView(v as 'site' | 'structure')}>
             <TabsList>
-              <TabsTrigger value="site" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Par Site
-              </TabsTrigger>
-              <TabsTrigger value="structure" className="flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                Par Structure
-              </TabsTrigger>
+              <TabsTrigger value="site" className="flex items-center gap-2"><MapPin className="w-4 h-4" />Par Site</TabsTrigger>
+              <TabsTrigger value="structure" className="flex items-center gap-2"><Building2 className="w-4 h-4" />Par Structure</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardContent>
       </Card>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Répartition des Véhicules</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Répartition des Véhicules</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie
-                  data={vehicleDistribution}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={false}
-                >
-                  {vehicleDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
+                <Pie data={vehicleDistribution} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
+                  {vehicleDistribution.map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                 </Pie>
                 <Tooltip formatter={(value: number) => [value, 'Véhicules']} />
               </PieChart>
@@ -120,23 +95,14 @@ export function StructureStats() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Comparaison des Coûts</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Comparaison des Coûts</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={costComparison}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="name" className="text-xs" angle={-45} textAnchor="end" height={80} />
                 <YAxis className="text-xs" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number) => [`${value.toLocaleString()} DH`]}
-                />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value.toLocaleString()} DZD`]} />
                 <Legend />
                 <Bar dataKey="carburant" name="Carburant" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="depenses" name="Dépenses" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
@@ -146,13 +112,8 @@ export function StructureStats() {
         </Card>
       </div>
 
-      {/* Detail Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Détail par {view === 'site' ? 'Site' : 'Structure'}
-          </CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">Détail par {view === 'site' ? 'Site' : 'Structure'}</CardTitle></CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
@@ -173,54 +134,28 @@ export function StructureStats() {
                   <TableRow key={stat.name}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                         <span className="font-medium">{stat.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">{stat.vehicules}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={stat.actifs === stat.vehicules ? 'default' : 'secondary'}>
-                        {stat.actifs}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{stat.carburant.toLocaleString()} DH</TableCell>
-                    <TableCell className="text-right">{stat.depenses.toLocaleString()} DH</TableCell>
-                    <TableCell className="text-right font-medium">{stat.total.toLocaleString()} DH</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {stat.coutMoyen.toLocaleString()} DH
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={stat.tickets > 5 ? 'destructive' : 'outline'}>
-                        {stat.tickets}
-                      </Badge>
-                    </TableCell>
+                    <TableCell className="text-center"><Badge variant={stat.actifs === stat.vehicules ? 'default' : 'secondary'}>{stat.actifs}</Badge></TableCell>
+                    <TableCell className="text-right">{stat.carburant.toLocaleString()} DZD</TableCell>
+                    <TableCell className="text-right">{stat.depenses.toLocaleString()} DZD</TableCell>
+                    <TableCell className="text-right font-medium">{stat.total.toLocaleString()} DZD</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{Math.round(stat.coutMoyen).toLocaleString()} DZD</TableCell>
+                    <TableCell className="text-center"><Badge variant={stat.tickets > 5 ? 'destructive' : 'outline'}>{stat.tickets}</Badge></TableCell>
                   </TableRow>
                 ))}
-                {/* Total Row */}
                 <TableRow className="bg-muted/50 font-medium">
                   <TableCell>TOTAL</TableCell>
-                  <TableCell className="text-center">
-                    {currentStats.reduce((s, stat) => s + stat.vehicules, 0)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {currentStats.reduce((s, stat) => s + stat.actifs, 0)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {currentStats.reduce((s, stat) => s + stat.carburant, 0).toLocaleString()} DH
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {currentStats.reduce((s, stat) => s + stat.depenses, 0).toLocaleString()} DH
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {currentStats.reduce((s, stat) => s + stat.total, 0).toLocaleString()} DH
-                  </TableCell>
+                  <TableCell className="text-center">{currentStats.reduce((s, stat) => s + stat.vehicules, 0)}</TableCell>
+                  <TableCell className="text-center">{currentStats.reduce((s, stat) => s + stat.actifs, 0)}</TableCell>
+                  <TableCell className="text-right">{currentStats.reduce((s, stat) => s + stat.carburant, 0).toLocaleString()} DZD</TableCell>
+                  <TableCell className="text-right">{currentStats.reduce((s, stat) => s + stat.depenses, 0).toLocaleString()} DZD</TableCell>
+                  <TableCell className="text-right">{currentStats.reduce((s, stat) => s + stat.total, 0).toLocaleString()} DZD</TableCell>
                   <TableCell className="text-right">-</TableCell>
-                  <TableCell className="text-center">
-                    {currentStats.reduce((s, stat) => s + stat.tickets, 0)}
-                  </TableCell>
+                  <TableCell className="text-center">{currentStats.reduce((s, stat) => s + stat.tickets, 0)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>

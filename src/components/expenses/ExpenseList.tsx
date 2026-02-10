@@ -1,69 +1,87 @@
 import { useState } from 'react';
-import { Plus, Receipt, TrendingUp, Filter } from 'lucide-react';
-import { Expense } from '@/types/fleet';
-import { mockExpenses, mockVehicles, prestataires } from '@/data/mockData';
+import { Plus, Receipt, TrendingUp, Loader2 } from 'lucide-react';
+import { useExpenses, useCreateExpense } from '@/hooks/useExpenses';
+import { useVehicles } from '@/hooks/useVehicles';
+import { usePrestataires } from '@/hooks/usePrestataires';
+import { useAuth } from '@/contexts/AuthContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
+
+type ExpenseCategory = Database['public']['Enums']['expense_category'];
+type ExpenseLink = Database['public']['Enums']['expense_link'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 export function ExpenseList() {
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+  const { data: expenses = [], isLoading } = useExpenses();
+  const { data: vehicles = [] } = useVehicles();
+  const { data: prestataires = [] } = usePrestataires();
+  const createExpense = useCreateExpense();
+  const { user } = useAuth();
+
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     vehicleId: '',
-    lieLa: 'Libre' as const,
-    categorie: 'Divers' as const,
-    prestataire: '',
+    lieLa: 'Libre' as ExpenseLink,
+    categorie: 'Divers' as ExpenseCategory,
+    prestataireId: '',
     montant: '',
     numeroFacture: '',
-    modePaiement: 'Cash' as const,
+    modePaiement: 'Cash' as PaymentMethod,
     observations: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const vehicle = mockVehicles.find(v => v.id === formData.vehicleId);
-    const newExpense: Expense = {
-      id: `D${String(expenses.length + 1).padStart(3, '0')}`,
-      date: new Date().toISOString().split('T')[0],
-      vehicleId: formData.vehicleId,
-      immatriculation: vehicle?.immatriculation || '',
-      lieLa: formData.lieLa,
+    createExpense.mutate({
+      vehicle_id: formData.vehicleId,
+      lie_a: formData.lieLa,
       categorie: formData.categorie,
-      prestataire: formData.prestataire,
+      prestataire_id: formData.prestataireId || null,
       montant: parseFloat(formData.montant),
-      numeroFacture: formData.numeroFacture,
-      modePaiement: formData.modePaiement,
-      observations: formData.observations,
-    };
-    setExpenses([newExpense, ...expenses]);
-    setShowForm(false);
-    setFormData({
-      vehicleId: '',
-      lieLa: 'Libre',
-      categorie: 'Divers',
-      prestataire: '',
-      montant: '',
-      numeroFacture: '',
-      modePaiement: 'Cash',
-      observations: '',
+      numero_facture: formData.numeroFacture || null,
+      mode_paiement: formData.modePaiement,
+      observations: formData.observations || null,
+      created_by: user?.id || null,
+    }, {
+      onSuccess: () => {
+        toast.success('Dépense enregistrée');
+        setShowForm(false);
+        setFormData({
+          vehicleId: '',
+          lieLa: 'Libre',
+          categorie: 'Divers',
+          prestataireId: '',
+          montant: '',
+          numeroFacture: '',
+          modePaiement: 'Cash',
+          observations: '',
+        });
+      },
+      onError: (error) => {
+        toast.error('Erreur', { description: error.message });
+      },
     });
   };
 
   // Stats by category
   const categoryStats = expenses.reduce((acc, exp) => {
-    acc[exp.categorie] = (acc[exp.categorie] || 0) + exp.montant;
+    acc[exp.categorie] = (acc[exp.categorie] || 0) + Number(exp.montant);
     return acc;
   }, {} as Record<string, number>);
 
-  const chartData = Object.entries(categoryStats).map(([name, value]) => ({
-    name,
-    value,
-  }));
-
+  const chartData = Object.entries(categoryStats).map(([name, value]) => ({ name, value }));
   const COLORS = ['hsl(215, 80%, 45%)', 'hsl(25, 95%, 55%)', 'hsl(145, 65%, 40%)', 'hsl(38, 92%, 50%)', 'hsl(0, 75%, 55%)'];
+  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.montant), 0);
+  const categories: ExpenseCategory[] = ['Pièces', "Main d'œuvre", 'Diagnostic', 'Remorquage', 'Divers'];
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.montant, 0);
-
-  const categories = ['Pièces', "Main d'œuvre", 'Diagnostic', 'Remorquage', 'Divers'];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -86,22 +104,14 @@ export function ExpenseList() {
             <div className="w-48 h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
+                  <Pie data={chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
+                    {chartData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => [`${value.toLocaleString()} DZD`, '']}
-                    contentStyle={{ 
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
@@ -114,10 +124,7 @@ export function ExpenseList() {
               {chartData.map((item, index) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                     <span className="text-sm">{item.name}</span>
                   </div>
                   <span className="font-medium">{item.value.toLocaleString()} DZD</span>
@@ -147,25 +154,16 @@ export function ExpenseList() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Véhicule *</label>
-                <select
-                  value={formData.vehicleId}
-                  onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-                  className="input-field"
-                  required
-                >
+                <select value={formData.vehicleId} onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })} className="input-field" required>
                   <option value="">Sélectionner...</option>
-                  {mockVehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.immatriculation}</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.immatriculation} - {v.marque} {v.modele}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Lié à</label>
-                <select
-                  value={formData.lieLa}
-                  onChange={(e) => setFormData({ ...formData, lieLa: e.target.value as any })}
-                  className="input-field"
-                >
+                <select value={formData.lieLa} onChange={(e) => setFormData({ ...formData, lieLa: e.target.value as ExpenseLink })} className="input-field">
                   <option value="Libre">Libre</option>
                   <option value="OT">Ordre de Travail</option>
                   <option value="Ticket">Ticket</option>
@@ -173,47 +171,28 @@ export function ExpenseList() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Catégorie</label>
-                <select
-                  value={formData.categorie}
-                  onChange={(e) => setFormData({ ...formData, categorie: e.target.value as any })}
-                  className="input-field"
-                >
+                <select value={formData.categorie} onChange={(e) => setFormData({ ...formData, categorie: e.target.value as ExpenseCategory })} className="input-field">
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Montant (DZD) *</label>
-                <input
-                  type="number"
-                  value={formData.montant}
-                  onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
-                  className="input-field"
-                  required
-                />
+                <input type="number" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="input-field" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Prestataire</label>
-                <select
-                  value={formData.prestataire}
-                  onChange={(e) => setFormData({ ...formData, prestataire: e.target.value })}
-                  className="input-field"
-                >
+                <select value={formData.prestataireId} onChange={(e) => setFormData({ ...formData, prestataireId: e.target.value })} className="input-field">
                   <option value="">Sélectionner...</option>
-                  {prestataires.map(p => <option key={p} value={p}>{p}</option>)}
+                  {prestataires.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">N° Facture</label>
-                <input
-                  type="text"
-                  value={formData.numeroFacture}
-                  onChange={(e) => setFormData({ ...formData, numeroFacture: e.target.value })}
-                  className="input-field"
-                />
+                <input type="text" value={formData.numeroFacture} onChange={(e) => setFormData({ ...formData, numeroFacture: e.target.value })} className="input-field" />
               </div>
             </div>
             <div className="flex gap-3 pt-4">
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={createExpense.isPending}>
                 <Receipt className="w-4 h-4" />
                 Enregistrer
               </button>
@@ -243,19 +222,26 @@ export function ExpenseList() {
               {expenses.map((expense) => (
                 <tr key={expense.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
                   <td className="py-3 px-4 text-sm">{expense.date}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{expense.immatriculation}</td>
+                  <td className="py-3 px-4 text-sm font-medium">{(expense as any).vehicle?.immatriculation || '-'}</td>
                   <td className="py-3 px-4">
                     <span className="badge-info">{expense.categorie}</span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-muted-foreground">{expense.prestataire}</td>
-                  <td className="py-3 px-4 text-sm font-bold text-right">{expense.montant.toLocaleString()} DZD</td>
-                  <td className="py-3 px-4 text-sm text-muted-foreground">{expense.numeroFacture || '-'}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{(expense as any).prestataire?.nom || '-'}</td>
+                  <td className="py-3 px-4 text-sm font-bold text-right">{Number(expense.montant).toLocaleString()} DZD</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{expense.numero_facture || '-'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {expenses.length === 0 && (
+        <div className="text-center py-12">
+          <Receipt className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">Aucune dépense enregistrée</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,56 +1,65 @@
 import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, User, Truck } from 'lucide-react';
-import { ScheduledMaintenance } from '@/types/fleet';
-import { mockScheduledMaintenance, mockVehicles, prestataires, chauffeurs, sites } from '@/data/mockData';
+import { Plus, Calendar, Clock, MapPin, User, Truck, Loader2 } from 'lucide-react';
+import { useScheduledMaintenance, useCreateScheduledMaintenance, useUpdateScheduledMaintenance } from '@/hooks/useScheduledMaintenance';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useChauffeurs } from '@/hooks/useChauffeurs';
+import { usePrestataires } from '@/hooks/usePrestataires';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
+
+type ActionType = Database['public']['Enums']['action_type'];
+type RdvStatus = Database['public']['Enums']['rdv_status'];
 
 export function PlanningCalendar() {
-  const [events, setEvents] = useState<ScheduledMaintenance[]>(mockScheduledMaintenance);
+  const { data: events = [], isLoading } = useScheduledMaintenance();
+  const { data: vehicles = [] } = useVehicles();
+  const { data: chauffeurs = [] } = useChauffeurs();
+  const { data: prestataires = [] } = usePrestataires();
+  const createMaintenance = useCreateScheduledMaintenance();
+  const updateMaintenance = useUpdateScheduledMaintenance();
+  const { user } = useAuth();
+
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     dateRDV: '',
     heure: '',
     vehicleId: '',
-    chauffeur: '',
-    prestataire: '',
-    typeAction: 'Dépôt' as const,
+    chauffeurId: '',
+    prestataireId: '',
+    typeAction: 'Dépôt' as ActionType,
     commentaire: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const vehicle = mockVehicles.find(v => v.id === formData.vehicleId);
-    const newEvent: ScheduledMaintenance = {
-      id: `P${String(events.length + 1).padStart(3, '0')}`,
-      dateRDV: formData.dateRDV,
+    createMaintenance.mutate({
+      date_rdv: formData.dateRDV,
       heure: formData.heure,
-      site: vehicle?.site || '',
-      structure: vehicle?.structure || '',
-      vehicleId: formData.vehicleId,
-      immatriculation: vehicle?.immatriculation || '',
-      chauffeur: formData.chauffeur,
-      prestataire: formData.prestataire,
-      typeAction: formData.typeAction,
-      statutRDV: 'Planifié',
-      commentaire: formData.commentaire,
-    };
-    setEvents([...events, newEvent]);
-    setShowForm(false);
-    setFormData({
-      dateRDV: '',
-      heure: '',
-      vehicleId: '',
-      chauffeur: '',
-      prestataire: '',
-      typeAction: 'Dépôt',
-      commentaire: '',
+      vehicle_id: formData.vehicleId,
+      chauffeur_id: formData.chauffeurId || null,
+      prestataire_id: formData.prestataireId || null,
+      type_action: formData.typeAction,
+      commentaire: formData.commentaire || null,
+      created_by: user?.id || null,
+    }, {
+      onSuccess: () => {
+        toast.success('RDV planifié');
+        setShowForm(false);
+        setFormData({ dateRDV: '', heure: '', vehicleId: '', chauffeurId: '', prestataireId: '', typeAction: 'Dépôt', commentaire: '' });
+      },
+      onError: (error) => {
+        toast.error('Erreur', { description: error.message });
+      },
     });
   };
 
-  const updateStatus = (eventId: string, newStatus: ScheduledMaintenance['statutRDV']) => {
-    setEvents(events.map(e => 
-      e.id === eventId ? { ...e, statutRDV: newStatus } : e
-    ));
+  const updateStatus = (eventId: string, newStatus: RdvStatus) => {
+    updateMaintenance.mutate({ id: eventId, statut_rdv: newStatus }, {
+      onSuccess: () => toast.success(`RDV mis à jour: ${newStatus}`),
+      onError: (error) => toast.error('Erreur', { description: error.message }),
+    });
   };
 
   const getActionColor = (type: string) => {
@@ -74,18 +83,25 @@ export function PlanningCalendar() {
     }
   };
 
-  const typeActions = ['Dépôt', 'Récupération', 'Diagnostic', 'Devis', 'Réparation'];
+  const typeActions: ActionType[] = ['Dépôt', 'Récupération', 'Diagnostic', 'Devis', 'Réparation'];
 
   // Group events by date
   const eventsByDate = events.reduce((acc, event) => {
-    if (!acc[event.dateRDV]) {
-      acc[event.dateRDV] = [];
-    }
-    acc[event.dateRDV].push(event);
+    const date = event.date_rdv;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(event);
     return acc;
-  }, {} as Record<string, ScheduledMaintenance[]>);
+  }, {} as Record<string, typeof events>);
 
   const sortedDates = Object.keys(eventsByDate).sort();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -108,83 +124,48 @@ export function PlanningCalendar() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Date RDV *</label>
-                <input
-                  type="date"
-                  value={formData.dateRDV}
-                  onChange={(e) => setFormData({ ...formData, dateRDV: e.target.value })}
-                  className="input-field"
-                  required
-                />
+                <input type="date" value={formData.dateRDV} onChange={(e) => setFormData({ ...formData, dateRDV: e.target.value })} className="input-field" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Heure *</label>
-                <input
-                  type="time"
-                  value={formData.heure}
-                  onChange={(e) => setFormData({ ...formData, heure: e.target.value })}
-                  className="input-field"
-                  required
-                />
+                <input type="time" value={formData.heure} onChange={(e) => setFormData({ ...formData, heure: e.target.value })} className="input-field" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Type Action *</label>
-                <select
-                  value={formData.typeAction}
-                  onChange={(e) => setFormData({ ...formData, typeAction: e.target.value as any })}
-                  className="input-field"
-                >
+                <select value={formData.typeAction} onChange={(e) => setFormData({ ...formData, typeAction: e.target.value as ActionType })} className="input-field">
                   {typeActions.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Véhicule *</label>
-                <select
-                  value={formData.vehicleId}
-                  onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-                  className="input-field"
-                  required
-                >
+                <select value={formData.vehicleId} onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })} className="input-field" required>
                   <option value="">Sélectionner...</option>
-                  {mockVehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.immatriculation}</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.immatriculation} - {v.marque} {v.modele}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Chauffeur</label>
-                <select
-                  value={formData.chauffeur}
-                  onChange={(e) => setFormData({ ...formData, chauffeur: e.target.value })}
-                  className="input-field"
-                >
+                <select value={formData.chauffeurId} onChange={(e) => setFormData({ ...formData, chauffeurId: e.target.value })} className="input-field">
                   <option value="">Sélectionner...</option>
-                  {chauffeurs.map(c => <option key={c} value={c}>{c}</option>)}
+                  {chauffeurs.map(c => <option key={c.id} value={c.id}>{c.nom} {c.prenom || ''}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Prestataire</label>
-                <select
-                  value={formData.prestataire}
-                  onChange={(e) => setFormData({ ...formData, prestataire: e.target.value })}
-                  className="input-field"
-                >
+                <select value={formData.prestataireId} onChange={(e) => setFormData({ ...formData, prestataireId: e.target.value })} className="input-field">
                   <option value="">Sélectionner...</option>
-                  {prestataires.map(p => <option key={p} value={p}>{p}</option>)}
+                  {prestataires.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
                 </select>
               </div>
               <div className="lg:col-span-3">
                 <label className="block text-sm font-medium mb-1.5">Commentaire</label>
-                <input
-                  type="text"
-                  value={formData.commentaire}
-                  onChange={(e) => setFormData({ ...formData, commentaire: e.target.value })}
-                  className="input-field"
-                  placeholder="Notes..."
-                />
+                <input type="text" value={formData.commentaire} onChange={(e) => setFormData({ ...formData, commentaire: e.target.value })} className="input-field" placeholder="Notes..." />
               </div>
             </div>
             <div className="flex gap-3 pt-4">
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={createMaintenance.isPending}>
                 <Calendar className="w-4 h-4" />
                 Enregistrer RDV
               </button>
@@ -206,11 +187,7 @@ export function PlanningCalendar() {
               </div>
               <div>
                 <p className="font-semibold">
-                  {new Date(date).toLocaleDateString('fr-FR', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long' 
-                  })}
+                  {new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
                 <p className="text-sm text-muted-foreground">{eventsByDate[date].length} rendez-vous</p>
               </div>
@@ -218,56 +195,44 @@ export function PlanningCalendar() {
 
             <div className="ml-5 border-l-2 border-border pl-8 space-y-4">
               {eventsByDate[date].map((event) => (
-                <div
-                  key={event.id}
-                  className="card-elevated p-5 relative before:absolute before:left-[-2.15rem] before:top-6 before:w-3 before:h-3 before:rounded-full before:bg-primary"
-                >
+                <div key={event.id} className="card-elevated p-5 relative before:absolute before:left-[-2.15rem] before:top-6 before:w-3 before:h-3 before:rounded-full before:bg-primary">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     <div className="flex items-center gap-4">
-                      <span className={cn(
-                        "px-3 py-1.5 rounded-lg text-sm font-medium",
-                        getActionColor(event.typeAction)
-                      )}>
-                        {event.typeAction}
+                      <span className={cn("px-3 py-1.5 rounded-lg text-sm font-medium", getActionColor(event.type_action))}>
+                        {event.type_action}
                       </span>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="w-4 h-4" />
                         {event.heure}
                       </div>
                     </div>
-
                     <div className="flex-1 flex flex-wrap gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{event.immatriculation}</span>
+                        <span className="font-medium">{(event as any).vehicle?.immatriculation || '-'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="w-4 h-4" />
-                        {event.prestataire}
+                        {(event as any).prestataire?.nom || '-'}
                       </div>
-                      {event.chauffeur && (
+                      {(event as any).chauffeur && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <User className="w-4 h-4" />
-                          {event.chauffeur}
+                          {(event as any).chauffeur.nom} {(event as any).chauffeur.prenom || ''}
                         </div>
                       )}
                     </div>
-
                     <div className="flex items-center gap-3">
-                      <span className={getStatusStyle(event.statutRDV)}>
-                        {event.statutRDV}
+                      <span className={getStatusStyle(event.statut_rdv)}>
+                        {event.statut_rdv}
                       </span>
-                      {event.statutRDV === 'Planifié' && (
-                        <button
-                          onClick={() => updateStatus(event.id, 'Terminé')}
-                          className="btn-accent text-sm py-1.5"
-                        >
+                      {event.statut_rdv === 'Planifié' && (
+                        <button onClick={() => updateStatus(event.id, 'Terminé')} className="btn-accent text-sm py-1.5">
                           Terminer
                         </button>
                       )}
                     </div>
                   </div>
-
                   {event.commentaire && (
                     <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border">
                       {event.commentaire}

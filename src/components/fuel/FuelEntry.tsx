@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, History, Fuel, AlertTriangle } from 'lucide-react';
-import { FuelEntry as FuelEntryType } from '@/types/fleet';
-import { mockVehicles, mockFuelEntries, stations } from '@/data/mockData';
+import { Save, Plus, History, Fuel, AlertTriangle, Loader2 } from 'lucide-react';
+import { useFuelEntries, useCreateFuelEntry } from '@/hooks/useFuelEntries';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useStations } from '@/hooks/useStations';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function FuelEntry() {
-  const [entries, setEntries] = useState<FuelEntryType[]>(mockFuelEntries);
+  const { data: entries = [], isLoading } = useFuelEntries();
+  const { data: vehicles = [] } = useVehicles();
+  const { data: stations = [] } = useStations();
+  const createFuelEntry = useCreateFuelEntry();
+  const { user } = useAuth();
+
   const [showHistory, setShowHistory] = useState(false);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     vehicleId: '',
-    immatriculation: '',
     kmCompteur: '',
     kmPrecedent: 0,
     litres: '',
     montant: '',
-    station: '',
-    modePaiement: 'Carte' as const,
+    stationId: '',
+    modePaiement: 'Carte' as 'Cash' | 'Carte' | 'Bon' | 'Virement',
     observations: '',
   });
 
@@ -29,19 +36,12 @@ export function FuelEntry() {
 
   useEffect(() => {
     if (formData.vehicleId) {
-      const vehicleEntries = entries.filter(e => e.vehicleId === formData.vehicleId);
+      const vehicleEntries = entries.filter(e => e.vehicle_id === formData.vehicleId);
       if (vehicleEntries.length > 0) {
-        const lastEntry = vehicleEntries.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        )[0];
-        setFormData(prev => ({ ...prev, kmPrecedent: lastEntry.kmCompteur }));
+        const lastEntry = vehicleEntries[0]; // Already sorted desc
+        setFormData(prev => ({ ...prev, kmPrecedent: lastEntry.km_compteur }));
       } else {
         setFormData(prev => ({ ...prev, kmPrecedent: 0 }));
-      }
-      
-      const vehicle = mockVehicles.find(v => v.id === formData.vehicleId);
-      if (vehicle) {
-        setFormData(prev => ({ ...prev, immatriculation: vehicle.immatriculation }));
       }
     }
   }, [formData.vehicleId, entries]);
@@ -68,51 +68,53 @@ export function FuelEntry() {
     });
   }, [formData.kmCompteur, formData.kmPrecedent, formData.litres, formData.montant]);
 
-  const handleSubmit = (e: React.FormEvent, addNew: boolean = false) => {
-    e.preventDefault();
-    const newEntry: FuelEntryType = {
-      id: `F${String(entries.length + 1).padStart(3, '0')}`,
-      date: formData.date,
-      vehicleId: formData.vehicleId,
-      immatriculation: formData.immatriculation,
-      kmCompteur: parseInt(formData.kmCompteur),
-      kmPrecedent: formData.kmPrecedent,
-      distance: calculatedValues.distance,
-      litres: parseFloat(formData.litres),
-      montant: parseFloat(formData.montant),
-      station: formData.station,
-      modePaiement: formData.modePaiement,
-      observations: formData.observations,
-      consommation: calculatedValues.consommation,
-      coutKm: calculatedValues.coutKm,
-    };
-    setEntries([...entries, newEntry]);
-    
-    if (addNew) {
-      setFormData(prev => ({
-        ...prev,
-        kmCompteur: '',
-        litres: '',
-        montant: '',
-        observations: '',
-      }));
-    } else {
-      setFormData({
-        date: new Date().toISOString().split('T')[0],
-        vehicleId: '',
-        immatriculation: '',
-        kmCompteur: '',
-        kmPrecedent: 0,
-        litres: '',
-        montant: '',
-        station: '',
-        modePaiement: 'Carte',
-        observations: '',
-      });
-    }
+  const resetForm = (keepVehicle = false) => {
+    setFormData(prev => ({
+      date: new Date().toISOString().split('T')[0],
+      vehicleId: keepVehicle ? prev.vehicleId : '',
+      kmCompteur: '',
+      kmPrecedent: keepVehicle ? prev.kmPrecedent : 0,
+      litres: '',
+      montant: '',
+      stationId: keepVehicle ? prev.stationId : '',
+      modePaiement: 'Carte',
+      observations: '',
+    }));
   };
 
-  const selectedVehicleEntries = entries.filter(e => e.vehicleId === formData.vehicleId);
+  const handleSubmit = (e: React.FormEvent, addNew: boolean = false) => {
+    e.preventDefault();
+    createFuelEntry.mutate({
+      date: formData.date,
+      vehicle_id: formData.vehicleId,
+      km_compteur: parseInt(formData.kmCompteur),
+      km_precedent: formData.kmPrecedent,
+      litres: parseFloat(formData.litres),
+      montant: parseFloat(formData.montant),
+      station_id: formData.stationId || null,
+      mode_paiement: formData.modePaiement,
+      observations: formData.observations || null,
+      created_by: user?.id || null,
+    }, {
+      onSuccess: () => {
+        toast.success('Entrée carburant enregistrée');
+        resetForm(addNew);
+      },
+      onError: (error) => {
+        toast.error('Erreur lors de l\'enregistrement', { description: error.message });
+      },
+    });
+  };
+
+  const selectedVehicleEntries = entries.filter(e => e.vehicle_id === formData.vehicleId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -156,7 +158,7 @@ export function FuelEntry() {
                   required
                 >
                   <option value="">Sélectionner...</option>
-                  {mockVehicles.map(v => (
+                  {vehicles.map(v => (
                     <option key={v.id} value={v.id}>
                       {v.immatriculation} - {v.marque} {v.modele}
                     </option>
@@ -220,12 +222,12 @@ export function FuelEntry() {
               <div>
                 <label className="block text-sm font-medium mb-1.5">Station</label>
                 <select
-                  value={formData.station}
-                  onChange={(e) => setFormData({ ...formData, station: e.target.value })}
+                  value={formData.stationId}
+                  onChange={(e) => setFormData({ ...formData, stationId: e.target.value })}
                   className="input-field"
                 >
                   <option value="">Sélectionner...</option>
-                  {stations.map(s => <option key={s} value={s}>{s}</option>)}
+                  {stations.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
                 </select>
               </div>
 
@@ -239,6 +241,7 @@ export function FuelEntry() {
                   <option value="Cash">Cash</option>
                   <option value="Carte">Carte</option>
                   <option value="Bon">Bon</option>
+                  <option value="Virement">Virement</option>
                 </select>
               </div>
 
@@ -262,7 +265,7 @@ export function FuelEntry() {
             )}
 
             <div className="flex gap-3">
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={createFuelEntry.isPending}>
                 <Save className="w-4 h-4" />
                 Enregistrer
               </button>
@@ -270,6 +273,7 @@ export function FuelEntry() {
                 type="button"
                 onClick={(e) => handleSubmit(e as any, true)}
                 className="btn-accent"
+                disabled={createFuelEntry.isPending}
               >
                 <Plus className="w-4 h-4" />
                 Enregistrer & Nouveau
@@ -321,13 +325,13 @@ export function FuelEntry() {
                 {selectedVehicleEntries.map((entry) => (
                   <tr key={entry.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                     <td className="py-3 px-4 text-sm">{entry.date}</td>
-                    <td className="py-3 px-4 text-sm font-medium">{entry.kmCompteur}</td>
+                    <td className="py-3 px-4 text-sm font-medium">{entry.km_compteur}</td>
                     <td className="py-3 px-4 text-sm">{entry.litres} L</td>
-                    <td className="py-3 px-4 text-sm">{entry.montant.toLocaleString()} DZD</td>
+                    <td className="py-3 px-4 text-sm">{Number(entry.montant).toLocaleString()} DZD</td>
                     <td className="py-3 px-4 text-sm">
-                      <span className="badge-info">{entry.consommation} L/100km</span>
+                      <span className="badge-info">{entry.consommation ? Number(entry.consommation).toFixed(2) : '-'} L/100km</span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{entry.station}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">{(entry as any).station?.nom || '-'}</td>
                   </tr>
                 ))}
               </tbody>

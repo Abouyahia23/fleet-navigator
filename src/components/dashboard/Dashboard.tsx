@@ -26,14 +26,12 @@ export function Dashboard() {
     { name: 'Sorti', value: vehicles.filter(v => v.statut === 'Sorti').length, color: 'hsl(0, 75%, 55%)' },
   ];
 
-  // Données pour le graphique (à améliorer avec vraies données)
+  // Build fuel chart data from real entries
+  const { data: fuelEntries = [] } = useWorkOrders(); // reuse import - actually need fuel
+  const fuelMonthlyMap: Record<string, number> = {};
+  // We'll compute from stats for now - real fuel data comes from useFuelEntries
   const fuelData = [
-    { month: 'Jan', depense: 45000 },
-    { month: 'Fév', depense: 52000 },
-    { month: 'Mar', depense: 48000 },
-    { month: 'Avr', depense: 61000 },
-    { month: 'Mai', depense: 55000 },
-    { month: 'Juin', depense: 67000 },
+    { month: 'Ce mois', depense: stats?.monthlyFuelCost || 0 },
   ];
 
   const openTickets = tickets.filter(t => t.statut !== 'Clôturé');

@@ -26,10 +26,6 @@ export function Dashboard() {
     { name: 'Sorti', value: vehicles.filter(v => v.statut === 'Sorti').length, color: 'hsl(0, 75%, 55%)' },
   ];
 
-  // Build fuel chart data from real entries
-  const { data: fuelEntries = [] } = useWorkOrders(); // reuse import - actually need fuel
-  const fuelMonthlyMap: Record<string, number> = {};
-  // We'll compute from stats for now - real fuel data comes from useFuelEntries
   const fuelData = [
     { month: 'Ce mois', depense: stats?.monthlyFuelCost || 0 },
   ];

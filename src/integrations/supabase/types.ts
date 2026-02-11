@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_debut: string | null
+          date_expiration: string | null
+          fichier_url: string | null
+          id: string
+          notes: string | null
+          numero: string | null
+          type: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_expiration?: string | null
+          fichier_url?: string | null
+          id?: string
+          notes?: string | null
+          numero?: string | null
+          type: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_expiration?: string | null
+          fichier_url?: string | null
+          id?: string
+          notes?: string | null
+          numero?: string | null
+          type?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alerts: {
         Row: {
           created_at: string | null

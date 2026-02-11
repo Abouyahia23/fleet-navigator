@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Save, AlertTriangle, Shield, FileCheck, Car, Calendar } from 'lucide-react';
-import { mockVehicles } from '@/data/mockData';
-import { Vehicle } from '@/types/fleet';
+import { Save, AlertTriangle, Shield, FileCheck, Car, Loader2 } from 'lucide-react';
+import { useVehicles, useUpdateVehicle } from '@/hooks/useVehicles';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export function AdminDocuments() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const { data: vehicles = [], isLoading } = useVehicles();
+  const updateVehicle = useUpdateVehicle();
+
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     finAssurance: '',
     finCT: '',
@@ -15,10 +17,12 @@ export function AdminDocuments() {
     observations: '',
   });
 
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || null;
+
   const today = new Date();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 
-  const getAlertStatus = (dateStr?: string) => {
+  const getAlertStatus = (dateStr?: string | null) => {
     if (!dateStr) return 'none';
     const date = new Date(dateStr);
     const diff = date.getTime() - today.getTime();
@@ -30,12 +34,12 @@ export function AdminDocuments() {
   const handleVehicleSelect = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
     if (vehicle) {
-      setSelectedVehicle(vehicle);
+      setSelectedVehicleId(vehicle.id);
       setFormData({
-        finAssurance: vehicle.finAssurance || '',
-        finCT: vehicle.finCT || '',
-        finGPL: vehicle.finGPL || '',
-        vignetteAnnee: vehicle.vignetteAnnee?.toString() || '',
+        finAssurance: vehicle.fin_assurance || '',
+        finCT: vehicle.fin_ct || '',
+        finGPL: vehicle.fin_gpl || '',
+        vignetteAnnee: vehicle.vignette_annee?.toString() || '',
         observations: vehicle.observations || '',
       });
     }
@@ -43,31 +47,37 @@ export function AdminDocuments() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVehicle) return;
+    if (!selectedVehicleId) return;
 
-    setVehicles(vehicles.map(v => 
-      v.id === selectedVehicle.id 
-        ? { 
-            ...v, 
-            finAssurance: formData.finAssurance,
-            finCT: formData.finCT,
-            finGPL: formData.finGPL,
-            vignetteAnnee: parseInt(formData.vignetteAnnee) || undefined,
-            observations: formData.observations,
-          }
-        : v
-    ));
+    updateVehicle.mutate({
+      id: selectedVehicleId,
+      fin_assurance: formData.finAssurance || null,
+      fin_ct: formData.finCT || null,
+      fin_gpl: formData.finGPL || null,
+      vignette_annee: parseInt(formData.vignetteAnnee) || null,
+      observations: formData.observations || null,
+    }, {
+      onSuccess: () => toast.success('Documents mis à jour'),
+      onError: (error) => toast.error('Erreur', { description: error.message }),
+    });
   };
 
-  // Count alerts
   const alertsCount = vehicles.reduce((count, v) => {
-    if (getAlertStatus(v.finAssurance) !== 'ok') count++;
-    if (getAlertStatus(v.finCT) !== 'ok') count++;
-    if (v.energie === 'GPL' && getAlertStatus(v.finGPL) !== 'ok') count++;
+    if (getAlertStatus(v.fin_assurance) !== 'ok') count++;
+    if (getAlertStatus(v.fin_ct) !== 'ok') count++;
+    if (v.energie === 'GPL' && getAlertStatus(v.fin_gpl) !== 'ok') count++;
     return count;
   }, 0);
 
   const years = Array.from({ length: 5 }, (_, i) => today.getFullYear() - 1 + i);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -85,7 +95,6 @@ export function AdminDocuments() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Vehicle List with Alerts */}
         <div className="lg:col-span-2 card-elevated p-6">
           <h3 className="text-lg font-semibold mb-4">État des Documents</h3>
           <div className="overflow-x-auto">
@@ -102,16 +111,16 @@ export function AdminDocuments() {
               </thead>
               <tbody>
                 {vehicles.map((vehicle) => {
-                  const assuranceStatus = getAlertStatus(vehicle.finAssurance);
-                  const ctStatus = getAlertStatus(vehicle.finCT);
-                  const gplStatus = vehicle.energie === 'GPL' ? getAlertStatus(vehicle.finGPL) : 'none';
+                  const assuranceStatus = getAlertStatus(vehicle.fin_assurance);
+                  const ctStatus = getAlertStatus(vehicle.fin_ct);
+                  const gplStatus = vehicle.energie === 'GPL' ? getAlertStatus(vehicle.fin_gpl) : 'none';
 
                   return (
                     <tr 
                       key={vehicle.id} 
                       className={cn(
                         "border-b border-border hover:bg-secondary/50 transition-colors cursor-pointer",
-                        selectedVehicle?.id === vehicle.id && "bg-primary/5"
+                        selectedVehicleId === vehicle.id && "bg-primary/5"
                       )}
                       onClick={() => handleVehicleSelect(vehicle.id)}
                     >
@@ -127,25 +136,25 @@ export function AdminDocuments() {
                         </div>
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <StatusBadge status={assuranceStatus} date={vehicle.finAssurance} />
+                        <StatusBadge status={assuranceStatus} date={vehicle.fin_assurance} />
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <StatusBadge status={ctStatus} date={vehicle.finCT} />
+                        <StatusBadge status={ctStatus} date={vehicle.fin_ct} />
                       </td>
                       <td className="py-3 px-3 text-center">
                         {vehicle.energie === 'GPL' ? (
-                          <StatusBadge status={gplStatus} date={vehicle.finGPL} />
+                          <StatusBadge status={gplStatus} date={vehicle.fin_gpl} />
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        {vehicle.vignetteAnnee ? (
+                        {vehicle.vignette_annee ? (
                           <span className={cn(
                             "badge-info",
-                            vehicle.vignetteAnnee < today.getFullYear() && "badge-danger"
+                            vehicle.vignette_annee < today.getFullYear() && "badge-danger"
                           )}>
-                            {vehicle.vignetteAnnee}
+                            {vehicle.vignette_annee}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
@@ -164,7 +173,6 @@ export function AdminDocuments() {
           </div>
         </div>
 
-        {/* Edit Form */}
         <div className="card-elevated p-6 h-fit">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
@@ -234,10 +242,7 @@ export function AdminDocuments() {
               </div>
 
               <div className="pt-4">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Emails: {selectedVehicle.gestionnaireEmail || '-'}
-                </p>
-                <button type="submit" className="btn-primary w-full">
+                <button type="submit" className="btn-primary w-full" disabled={updateVehicle.isPending}>
                   <Save className="w-4 h-4" />
                   Enregistrer
                 </button>
@@ -257,7 +262,7 @@ export function AdminDocuments() {
   );
 }
 
-function StatusBadge({ status, date }: { status: string; date?: string }) {
+function StatusBadge({ status, date }: { status: string; date?: string | null }) {
   if (status === 'none' || !date) {
     return <span className="text-xs text-muted-foreground">-</span>;
   }

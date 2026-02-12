@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export function FuelEntry() {
-  const { data: entries = [], isLoading } = useFuelEntries();
   const { data: vehicles = [] } = useVehicles();
   const { data: stations = [] } = useStations();
   const createFuelEntry = useCreateFuelEntry();
@@ -26,6 +25,8 @@ export function FuelEntry() {
     observations: '',
   });
 
+  const { data: entries = [], isLoading } = useFuelEntries(formData.vehicleId || undefined);
+
   const [calculatedValues, setCalculatedValues] = useState({
     distance: 0,
     consommation: 0,
@@ -35,14 +36,11 @@ export function FuelEntry() {
   const [warning, setWarning] = useState('');
 
   useEffect(() => {
-    if (formData.vehicleId) {
-      const vehicleEntries = entries.filter(e => e.vehicle_id === formData.vehicleId);
-      if (vehicleEntries.length > 0) {
-        const lastEntry = vehicleEntries[0]; // Already sorted desc
-        setFormData(prev => ({ ...prev, kmPrecedent: lastEntry.km_compteur }));
-      } else {
-        setFormData(prev => ({ ...prev, kmPrecedent: 0 }));
-      }
+    if (formData.vehicleId && entries.length > 0) {
+      const lastEntry = entries[0]; // Already sorted desc, already filtered by vehicleId
+      setFormData(prev => ({ ...prev, kmPrecedent: lastEntry.km_compteur }));
+    } else if (!formData.vehicleId) {
+      setFormData(prev => ({ ...prev, kmPrecedent: 0 }));
     }
   }, [formData.vehicleId, entries]);
 
@@ -106,7 +104,7 @@ export function FuelEntry() {
     });
   };
 
-  const selectedVehicleEntries = entries.filter(e => e.vehicle_id === formData.vehicleId);
+  const selectedVehicleEntries = entries;
 
   if (isLoading) {
     return (

@@ -32,7 +32,9 @@ const App = () => (
               <Route
                 path="/"
                 element={
-                  <Index />
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
                 }
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

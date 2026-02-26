@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useUsers, useUpdateUserRole, useToggleUserActive } from '@/hooks/useUsers';
-import { Users, Shield, UserCog, User, Loader2, Search, CheckCircle, XCircle, Key } from 'lucide-react';
+import { Users, Shield, UserCog, User, Loader2, Search, CheckCircle, XCircle, Key, Plus, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Permission {
   id: string;
@@ -41,13 +43,22 @@ const permissions: Permission[] = [
 ];
 
 export function UserManagement() {
-  const { data: users, isLoading } = useUsers();
+  const { data: users, isLoading, refetch } = useUsers();
   const updateRole = useUpdateUserRole();
   const toggleActive = useToggleUserActive();
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showPermissions, setShowPermissions] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    nom: '',
+    prenom: '',
+    role: 'utilisateur' as 'admin' | 'gestionnaire' | 'utilisateur',
+    password: '',
+  });
 
   const filteredUsers = users?.filter(user => {
     const matchesFilter = filter === 'all' || user.role === filter;
@@ -96,6 +107,42 @@ export function UserManagement() {
     gestionnaires: users?.filter(u => u.role === 'gestionnaire').length || 0,
     utilisateurs: users?.filter(u => u.role === 'utilisateur').length || 0,
     actifs: users?.filter(u => u.actif !== false).length || 0,
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUser.email || !newUser.nom || !newUser.password) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    if (newUser.password.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          nom: newUser.nom,
+          prenom: newUser.prenom,
+          role: newUser.role,
+          password: newUser.password,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(`Compte créé pour ${newUser.email} avec le rôle ${newUser.role}`);
+      setShowCreateUser(false);
+      setNewUser({ email: '', nom: '', prenom: '', role: 'utilisateur', password: '' });
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de la création du compte');
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (isLoading) {
@@ -184,6 +231,10 @@ export function UserManagement() {
                   </CardTitle>
                   <CardDescription>Gérer les comptes utilisateurs et leurs rôles</CardDescription>
                 </div>
+                <Button onClick={() => setShowCreateUser(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Créer un compte
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -399,6 +450,99 @@ export function UserManagement() {
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Créer un nouveau compte
+            </DialogTitle>
+            <DialogDescription>
+              Le compte sera créé avec un mot de passe que vous définissez. L'utilisateur pourra se connecter immédiatement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Prénom</Label>
+                <Input
+                  value={newUser.prenom}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, prenom: e.target.value }))}
+                  placeholder="Prénom"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nom *</Label>
+                <Input
+                  value={newUser.nom}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, nom: e.target.value }))}
+                  placeholder="Nom"
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Email *</Label>
+              <Input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemple.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Mot de passe *</Label>
+              <Input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Minimum 6 caractères"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rôle *</Label>
+              <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value as any }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-red-500" />
+                      Administrateur
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="gestionnaire">
+                    <div className="flex items-center gap-2">
+                      <UserCog className="w-4 h-4 text-blue-500" />
+                      Gestionnaire
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="utilisateur">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Utilisateur
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setShowCreateUser(false)} disabled={creating}>
+                Annuler
+              </Button>
+              <Button onClick={handleCreateUser} disabled={creating}>
+                {creating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                Créer le compte
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -6,6 +6,8 @@ import { useStructures } from '@/hooks/useStructures';
 import { useChauffeurs } from '@/hooks/useChauffeurs';
 import { useGestionnaires } from '@/hooks/useGestionnaires';
 import { useAssignmentHistory, useCreateAssignment } from '@/hooks/useAssignmentHistory';
+import { useMyProfile } from '@/hooks/useMyProfile';
+import { useUserRole } from '@/hooks/useUserRole';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 type VehicleInsert = TablesInsert<'vehicles'>;
@@ -26,6 +28,8 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const { data: gestionnaires = [] } = useGestionnaires(true);
   const { data: history = [] } = useAssignmentHistory(vehicle?.id);
   const createAssignment = useCreateAssignment();
+  const { profileId } = useMyProfile();
+  const { isAdmin } = useUserRole();
 
   const [formData, setFormData] = useState<Record<string, any>>({
     immatriculation: '',
@@ -52,6 +56,13 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [availableModeles, setAvailableModeles] = useState<string[]>([]);
+
+  // Auto-set gestionnaire_id for gestionnaire role
+  useEffect(() => {
+    if (!isAdmin && profileId && !vehicle) {
+      setFormData(prev => ({ ...prev, gestionnaire_id: profileId }));
+    }
+  }, [isAdmin, profileId, vehicle]);
 
   useEffect(() => {
     if (formData.marque) {
@@ -317,7 +328,12 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Gestionnaire du Parc</label>
-                <select value={formData.gestionnaire_id || ''} onChange={(e) => setFormData({ ...formData, gestionnaire_id: e.target.value || null })} className="input-field">
+                <select
+                  value={formData.gestionnaire_id || ''}
+                  onChange={(e) => setFormData({ ...formData, gestionnaire_id: e.target.value || null })}
+                  className="input-field"
+                  disabled={!isAdmin}
+                >
                   <option value="">Sélectionner...</option>
                   {activeGestionnaires.map(g => (
                     <option key={g.id} value={g.profile_id}>
@@ -325,6 +341,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
                     </option>
                   ))}
                 </select>
+                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Assigné automatiquement</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Type d'affectataire</label>

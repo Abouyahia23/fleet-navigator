@@ -88,20 +88,40 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      let finalData = { ...formData };
+
+      // Upload image to Storage if a new file was selected
+      if (imageFile) {
+        try {
+          const vehicleId = vehicle?.id || crypto.randomUUID();
+          if (!vehicle) finalData.id = vehicleId;
+          // Delete old image if replacing
+          if (vehicle?.image_url && !vehicle.image_url.startsWith('data:')) {
+            await deleteVehicleImage(vehicle.image_url);
+          }
+          const publicUrl = await uploadVehicleImage(imageFile, vehicleId);
+          finalData.image_url = publicUrl;
+        } catch (err) {
+          console.error('Error uploading image:', err);
+          toast.error("Erreur lors de l'upload de l'image");
+          return;
+        }
+      }
+
       // If affectataire changed, create history entry
-      if (vehicle && formData.affectataire && formData.affectataire !== vehicle.affectataire && formData.affectataire_type) {
+      if (vehicle && finalData.affectataire && finalData.affectataire !== vehicle.affectataire && finalData.affectataire_type) {
         try {
           await createAssignment.mutateAsync({
             vehicle_id: vehicle.id,
-            affectataire: formData.affectataire,
-            affectataire_type: formData.affectataire_type as AffectatireType,
+            affectataire: finalData.affectataire,
+            affectataire_type: finalData.affectataire_type as AffectatireType,
             date_debut: new Date().toISOString().split('T')[0],
           });
         } catch (err) {
           console.error('Error creating assignment history:', err);
         }
       }
-      onSave(formData);
+      onSave(finalData);
     }
   };
 

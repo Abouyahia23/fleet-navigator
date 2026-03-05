@@ -8,6 +8,8 @@ import { useGestionnaires } from '@/hooks/useGestionnaires';
 import { useAssignmentHistory, useCreateAssignment } from '@/hooks/useAssignmentHistory';
 import { useMyProfile } from '@/hooks/useMyProfile';
 import { useUserRole } from '@/hooks/useUserRole';
+import { uploadVehicleImage, deleteVehicleImage } from '@/lib/vehicleImageStorage';
+import { toast } from 'sonner';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 type VehicleInsert = TablesInsert<'vehicles'>;

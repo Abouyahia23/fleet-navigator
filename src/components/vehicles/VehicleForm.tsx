@@ -8,6 +8,8 @@ import { useGestionnaires } from '@/hooks/useGestionnaires';
 import { useAssignmentHistory, useCreateAssignment } from '@/hooks/useAssignmentHistory';
 import { useMyProfile } from '@/hooks/useMyProfile';
 import { useUserRole } from '@/hooks/useUserRole';
+import { uploadVehicleImage, deleteVehicleImage } from '@/lib/vehicleImageStorage';
+import { toast } from 'sonner';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 type VehicleInsert = TablesInsert<'vehicles'>;
@@ -86,20 +88,40 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      let finalData = { ...formData };
+
+      // Upload image to Storage if a new file was selected
+      if (imageFile) {
+        try {
+          const vehicleId = vehicle?.id || crypto.randomUUID();
+          if (!vehicle) finalData.id = vehicleId;
+          // Delete old image if replacing
+          if (vehicle?.image_url && !vehicle.image_url.startsWith('data:')) {
+            await deleteVehicleImage(vehicle.image_url);
+          }
+          const publicUrl = await uploadVehicleImage(imageFile, vehicleId);
+          finalData.image_url = publicUrl;
+        } catch (err) {
+          console.error('Error uploading image:', err);
+          toast.error("Erreur lors de l'upload de l'image");
+          return;
+        }
+      }
+
       // If affectataire changed, create history entry
-      if (vehicle && formData.affectataire && formData.affectataire !== vehicle.affectataire && formData.affectataire_type) {
+      if (vehicle && finalData.affectataire && finalData.affectataire !== vehicle.affectataire && finalData.affectataire_type) {
         try {
           await createAssignment.mutateAsync({
             vehicle_id: vehicle.id,
-            affectataire: formData.affectataire,
-            affectataire_type: formData.affectataire_type as AffectatireType,
+            affectataire: finalData.affectataire,
+            affectataire_type: finalData.affectataire_type as AffectatireType,
             date_debut: new Date().toISOString().split('T')[0],
           });
         } catch (err) {
           console.error('Error creating assignment history:', err);
         }
       }
-      onSave(formData);
+      onSave(finalData);
     }
   };
 
@@ -122,16 +144,18 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     setImagePreview('');
   };
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        setFormData({ ...formData, image_url: base64 });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image trop volumineuse (max 5 Mo)');
+        return;
+      }
+      setImageFile(file);
+      const preview = URL.createObjectURL(file);
+      setImagePreview(preview);
     }
   };
 
@@ -140,7 +164,11 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     setImagePreview(url);
   };
 
-  const removeImage = () => {
+  const removeImage = async () => {
+    if (formData.image_url && !formData.image_url.startsWith('data:')) {
+      await deleteVehicleImage(formData.image_url);
+    }
+    setImageFile(null);
     setFormData({ ...formData, image_url: '' });
     setImagePreview('');
   };

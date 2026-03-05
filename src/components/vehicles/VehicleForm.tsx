@@ -28,6 +28,8 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const { data: gestionnaires = [] } = useGestionnaires(true);
   const { data: history = [] } = useAssignmentHistory(vehicle?.id);
   const createAssignment = useCreateAssignment();
+  const { profileId } = useMyProfile();
+  const { isAdmin } = useUserRole();
 
   const [formData, setFormData] = useState<Record<string, any>>({
     immatriculation: '',

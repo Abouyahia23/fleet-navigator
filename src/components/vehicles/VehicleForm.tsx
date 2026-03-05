@@ -328,7 +328,12 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Gestionnaire du Parc</label>
-                <select value={formData.gestionnaire_id || ''} onChange={(e) => setFormData({ ...formData, gestionnaire_id: e.target.value || null })} className="input-field">
+                <select
+                  value={formData.gestionnaire_id || ''}
+                  onChange={(e) => setFormData({ ...formData, gestionnaire_id: e.target.value || null })}
+                  className="input-field"
+                  disabled={!isAdmin}
+                >
                   <option value="">Sélectionner...</option>
                   {activeGestionnaires.map(g => (
                     <option key={g.id} value={g.profile_id}>
@@ -336,6 +341,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
                     </option>
                   ))}
                 </select>
+                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Assigné automatiquement</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Type d'affectataire</label>

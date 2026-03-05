@@ -57,6 +57,13 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [availableModeles, setAvailableModeles] = useState<string[]>([]);
 
+  // Auto-set gestionnaire_id for gestionnaire role
+  useEffect(() => {
+    if (!isAdmin && profileId && !vehicle) {
+      setFormData(prev => ({ ...prev, gestionnaire_id: profileId }));
+    }
+  }, [isAdmin, profileId, vehicle]);
+
   useEffect(() => {
     if (formData.marque) {
       setAvailableModeles(modelesByMarque[formData.marque] || []);

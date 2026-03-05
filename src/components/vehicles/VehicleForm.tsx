@@ -164,7 +164,11 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     setImagePreview(url);
   };
 
-  const removeImage = () => {
+  const removeImage = async () => {
+    if (formData.image_url && !formData.image_url.startsWith('data:')) {
+      await deleteVehicleImage(formData.image_url);
+    }
+    setImageFile(null);
     setFormData({ ...formData, image_url: '' });
     setImagePreview('');
   };

@@ -124,16 +124,18 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     setImagePreview('');
   };
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        setFormData({ ...formData, image_url: base64 });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image trop volumineuse (max 5 Mo)');
+        return;
+      }
+      setImageFile(file);
+      const preview = URL.createObjectURL(file);
+      setImagePreview(preview);
     }
   };
 

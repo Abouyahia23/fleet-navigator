@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Plus, Receipt, TrendingUp, Loader2 } from 'lucide-react';
+import { Plus, Receipt, TrendingUp, Loader2, Download } from 'lucide-react';
 import { useExpenses, useCreateExpense } from '@/hooks/useExpenses';
 import { useVehicles } from '@/hooks/useVehicles';
 import { usePrestataires } from '@/hooks/usePrestataires';
 import { useAuth } from '@/contexts/AuthContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { exportToCsv } from '@/lib/exportUtils';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 

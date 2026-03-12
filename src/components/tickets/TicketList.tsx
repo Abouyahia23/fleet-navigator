@@ -110,10 +110,29 @@ export function TicketList() {
           <h2 className="text-xl font-semibold">Tickets Réparation</h2>
           <p className="text-sm text-muted-foreground">Gérer les demandes de réparation</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          <Plus className="w-4 h-4" />
-          Nouveau Ticket
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const data = filteredTickets.map(t => ({
+                'Numéro': t.numero, 'Date': t.date_demande,
+                'Véhicule': (t as any).vehicle?.immatriculation || '',
+                'Symptôme': t.symptome, 'Priorité': t.priorite,
+                'Statut': t.statut, 'Km': t.km || '',
+              }));
+              if (!data.length) { toast.info('Aucune donnée à exporter'); return; }
+              exportToCsv(data, 'tickets_reparation');
+              toast.success('Export CSV généré');
+            }}
+            className="btn-secondary"
+          >
+            <Download className="w-4 h-4" />
+            Exporter CSV
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="btn-primary">
+            <Plus className="w-4 h-4" />
+            Nouveau Ticket
+          </button>
+        </div>
       </div>
 
       {/* Quick Filters */}

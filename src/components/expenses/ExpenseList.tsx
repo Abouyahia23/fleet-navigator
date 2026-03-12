@@ -91,10 +91,29 @@ export function ExpenseList() {
           <h2 className="text-xl font-semibold">Dépenses</h2>
           <p className="text-sm text-muted-foreground">Suivi des dépenses par véhicule</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          <Plus className="w-4 h-4" />
-          Nouvelle Dépense
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const data = expenses.map(e => ({
+                'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '',
+                'Catégorie': e.categorie, 'Prestataire': (e as any).prestataire?.nom || '',
+                'Montant (DZD)': e.montant, 'N° Facture': e.numero_facture || '',
+                'Mode Paiement': e.mode_paiement,
+              }));
+              if (!data.length) { toast.info('Aucune donnée à exporter'); return; }
+              exportToCsv(data, 'depenses');
+              toast.success('Export CSV généré');
+            }}
+            className="btn-secondary"
+          >
+            <Download className="w-4 h-4" />
+            Exporter CSV
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="btn-primary">
+            <Plus className="w-4 h-4" />
+            Nouvelle Dépense
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}

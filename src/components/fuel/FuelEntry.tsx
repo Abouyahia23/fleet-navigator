@@ -122,13 +122,33 @@ export function FuelEntry() {
           <h2 className="text-xl font-semibold">Saisie Carburant</h2>
           <p className="text-sm text-muted-foreground">Enregistrer un plein de carburant</p>
         </div>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="btn-secondary"
-        >
-          <History className="w-4 h-4" />
-          {showHistory ? 'Masquer' : 'Historique'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const data = entries.map(e => ({
+                'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '',
+                'Km Compteur': e.km_compteur, 'Distance': e.distance || '',
+                'Litres': e.litres, 'Montant (DZD)': e.montant,
+                'Conso (L/100km)': e.consommation ? Number(e.consommation).toFixed(2) : '',
+                'Station': (e as any).station?.nom || '',
+              }));
+              if (!data.length) { toast.info('Aucune donnée à exporter'); return; }
+              exportToCsv(data, 'carburant');
+              toast.success('Export CSV généré');
+            }}
+            className="btn-secondary"
+          >
+            <Download className="w-4 h-4" />
+            Exporter CSV
+          </button>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="btn-secondary"
+          >
+            <History className="w-4 h-4" />
+            {showHistory ? 'Masquer' : 'Historique'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

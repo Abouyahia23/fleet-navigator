@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Plus, Wrench, AlertCircle, Clock, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Plus, Wrench, AlertCircle, Clock, CheckCircle, ArrowRight, Loader2, Download } from 'lucide-react';
 import { useRepairTickets, useCreateRepairTicket, useUpdateRepairTicket } from '@/hooks/useRepairTickets';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useChauffeurs } from '@/hooks/useChauffeurs';
 import { usePrestataires } from '@/hooks/usePrestataires';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { exportToCsv } from '@/lib/exportUtils';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 

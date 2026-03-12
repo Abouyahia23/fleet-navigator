@@ -45,7 +45,7 @@ const navigationItems = [
 const bottomNavItems = [
   { id: 'alerts', label: 'Alertes', icon: Mail, requiresGestionnaire: true },
   { id: 'search', label: 'Rechercher', icon: Search },
-  { id: 'settings', label: 'Paramètres', icon: Settings, requiresGestionnaire: true },
+  { id: 'settings', label: 'Paramètres', icon: Settings },
 ];
 
 export function Sidebar({ currentPage, onNavigate, userRole, userName }: SidebarProps) {

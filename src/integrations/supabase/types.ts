@@ -108,6 +108,36 @@ export type Database = {
           },
         ]
       }
+      audit_events: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string
+          id: string
+          record_id: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          record_id: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          record_id?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chauffeurs: {
         Row: {
           actif: boolean
@@ -169,6 +199,7 @@ export type Database = {
           observations: string | null
           prestataire_id: string | null
           reference_ot_ticket: string | null
+          updated_by: string | null
           vehicle_id: string
         }
         Insert: {
@@ -184,6 +215,7 @@ export type Database = {
           observations?: string | null
           prestataire_id?: string | null
           reference_ot_ticket?: string | null
+          updated_by?: string | null
           vehicle_id: string
         }
         Update: {
@@ -199,6 +231,7 @@ export type Database = {
           observations?: string | null
           prestataire_id?: string | null
           reference_ot_ticket?: string | null
+          updated_by?: string | null
           vehicle_id?: string
         }
         Relationships: [
@@ -234,6 +267,7 @@ export type Database = {
           montant: number
           observations: string | null
           station_id: string | null
+          updated_by: string | null
           vehicle_id: string
         }
         Insert: {
@@ -251,6 +285,7 @@ export type Database = {
           montant: number
           observations?: string | null
           station_id?: string | null
+          updated_by?: string | null
           vehicle_id: string
         }
         Update: {
@@ -268,6 +303,7 @@ export type Database = {
           montant?: number
           observations?: string | null
           station_id?: string | null
+          updated_by?: string | null
           vehicle_id?: string
         }
         Relationships: [
@@ -435,6 +471,7 @@ export type Database = {
           statut: Database["public"]["Enums"]["ticket_status"]
           symptome: string
           updated_at: string
+          updated_by: string | null
           vehicle_id: string
         }
         Insert: {
@@ -451,6 +488,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["ticket_status"]
           symptome: string
           updated_at?: string
+          updated_by?: string | null
           vehicle_id: string
         }
         Update: {
@@ -467,6 +505,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["ticket_status"]
           symptome?: string
           updated_at?: string
+          updated_by?: string | null
           vehicle_id?: string
         }
         Relationships: [
@@ -506,6 +545,7 @@ export type Database = {
           statut_rdv: Database["public"]["Enums"]["rdv_status"]
           type_action: Database["public"]["Enums"]["action_type"]
           updated_at: string
+          updated_by: string | null
           vehicle_id: string
         }
         Insert: {
@@ -520,6 +560,7 @@ export type Database = {
           statut_rdv?: Database["public"]["Enums"]["rdv_status"]
           type_action: Database["public"]["Enums"]["action_type"]
           updated_at?: string
+          updated_by?: string | null
           vehicle_id: string
         }
         Update: {
@@ -534,6 +575,7 @@ export type Database = {
           statut_rdv?: Database["public"]["Enums"]["rdv_status"]
           type_action?: Database["public"]["Enums"]["action_type"]
           updated_at?: string
+          updated_by?: string | null
           vehicle_id?: string
         }
         Relationships: [
@@ -732,6 +774,7 @@ export type Database = {
           statut: Database["public"]["Enums"]["vehicle_status"]
           structure_id: string | null
           updated_at: string
+          updated_by: string | null
           vignette_annee: number | null
           vin: string | null
         }
@@ -761,6 +804,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["vehicle_status"]
           structure_id?: string | null
           updated_at?: string
+          updated_by?: string | null
           vignette_annee?: number | null
           vin?: string | null
         }
@@ -790,6 +834,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["vehicle_status"]
           structure_id?: string | null
           updated_at?: string
+          updated_by?: string | null
           vignette_annee?: number | null
           vin?: string | null
         }
@@ -846,6 +891,7 @@ export type Database = {
           ticket_id: string | null
           type: Database["public"]["Enums"]["work_order_type"]
           updated_at: string
+          updated_by: string | null
           vehicle_id: string
         }
         Insert: {
@@ -869,6 +915,7 @@ export type Database = {
           ticket_id?: string | null
           type?: Database["public"]["Enums"]["work_order_type"]
           updated_at?: string
+          updated_by?: string | null
           vehicle_id: string
         }
         Update: {
@@ -892,6 +939,7 @@ export type Database = {
           ticket_id?: string | null
           type?: Database["public"]["Enums"]["work_order_type"]
           updated_at?: string
+          updated_by?: string | null
           vehicle_id?: string
         }
         Relationships: [

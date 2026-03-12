@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, History, Fuel, AlertTriangle, Loader2 } from 'lucide-react';
+import { Save, Plus, History, Fuel, AlertTriangle, Loader2, Download } from 'lucide-react';
 import { useFuelEntries, useCreateFuelEntry } from '@/hooks/useFuelEntries';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useStations } from '@/hooks/useStations';
 import { useAuth } from '@/contexts/AuthContext';
+import { exportToCsv } from '@/lib/exportUtils';
 import { toast } from 'sonner';
 
 export function FuelEntry() {

@@ -43,9 +43,9 @@ const navigationItems = [
 ];
 
 const bottomNavItems = [
-  { id: 'alerts', label: 'Alertes', icon: Mail, requiresGestionnaire: true },
-  { id: 'search', label: 'Rechercher', icon: Search },
-  { id: 'settings', label: 'Paramètres', icon: Settings },
+  { id: 'alerts', label: 'Alertes', icon: Mail, color: 'text-yellow-400', requiresGestionnaire: true },
+  { id: 'search', label: 'Rechercher', icon: Search, color: 'text-sky-400' },
+  { id: 'settings', label: 'Paramètres', icon: Settings, color: 'text-gray-400' },
 ];
 
 export function Sidebar({ currentPage, onNavigate, userRole, userName }: SidebarProps) {

@@ -30,22 +30,22 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
-  { id: 'vehicles', label: 'Véhicules', icon: Car },
-  { id: 'fuel', label: 'Carburant', icon: Fuel },
-  { id: 'tickets', label: 'Tickets Réparation', icon: Wrench },
-  { id: 'workorders', label: 'Ordres de Travail', icon: ClipboardList },
-  { id: 'expenses', label: 'Dépenses', icon: Receipt },
-  { id: 'planning', label: 'Planning Entretien', icon: Calendar },
-  { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog },
-  { id: 'admin', label: 'Administratif', icon: FileText },
-  { id: 'statistics', label: 'États Statistiques', icon: FileText },
+  { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3, color: 'text-blue-400' },
+  { id: 'vehicles', label: 'Véhicules', icon: Car, color: 'text-emerald-400' },
+  { id: 'fuel', label: 'Carburant', icon: Fuel, color: 'text-amber-400' },
+  { id: 'tickets', label: 'Tickets Réparation', icon: Wrench, color: 'text-red-400' },
+  { id: 'workorders', label: 'Ordres de Travail', icon: ClipboardList, color: 'text-violet-400' },
+  { id: 'expenses', label: 'Dépenses', icon: Receipt, color: 'text-rose-400' },
+  { id: 'planning', label: 'Planning Entretien', icon: Calendar, color: 'text-cyan-400' },
+  { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog, color: 'text-orange-400' },
+  { id: 'admin', label: 'Administratif', icon: FileText, color: 'text-teal-400' },
+  { id: 'statistics', label: 'États Statistiques', icon: FileText, color: 'text-indigo-400' },
 ];
 
 const bottomNavItems = [
-  { id: 'alerts', label: 'Alertes', icon: Mail, requiresGestionnaire: true },
-  { id: 'search', label: 'Rechercher', icon: Search },
-  { id: 'settings', label: 'Paramètres', icon: Settings },
+  { id: 'alerts', label: 'Alertes', icon: Mail, color: 'text-yellow-400', requiresGestionnaire: true },
+  { id: 'search', label: 'Rechercher', icon: Search, color: 'text-sky-400' },
+  { id: 'settings', label: 'Paramètres', icon: Settings, color: 'text-gray-400' },
 ];
 
 export function Sidebar({ currentPage, onNavigate, userRole, userName }: SidebarProps) {
@@ -105,7 +105,7 @@ export function Sidebar({ currentPage, onNavigate, userRole, userName }: Sidebar
                   isActive && "active"
                 )}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={cn("w-5 h-5 flex-shrink-0", item.color)} />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
             );
@@ -132,7 +132,7 @@ export function Sidebar({ currentPage, onNavigate, userRole, userName }: Sidebar
                   isDisabled && "opacity-40 cursor-not-allowed"
                 )}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={cn("w-5 h-5 flex-shrink-0", item.color)} />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
             );

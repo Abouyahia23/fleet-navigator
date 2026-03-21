@@ -132,7 +132,7 @@ export function Sidebar({ currentPage, onNavigate, userRole, userName }: Sidebar
                   isDisabled && "opacity-40 cursor-not-allowed"
                 )}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={cn("w-5 h-5 flex-shrink-0", item.color)} />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
             );

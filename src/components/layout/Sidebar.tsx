@@ -30,16 +30,16 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
-  { id: 'vehicles', label: 'Véhicules', icon: Car },
-  { id: 'fuel', label: 'Carburant', icon: Fuel },
-  { id: 'tickets', label: 'Tickets Réparation', icon: Wrench },
-  { id: 'workorders', label: 'Ordres de Travail', icon: ClipboardList },
-  { id: 'expenses', label: 'Dépenses', icon: Receipt },
-  { id: 'planning', label: 'Planning Entretien', icon: Calendar },
-  { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog },
-  { id: 'admin', label: 'Administratif', icon: FileText },
-  { id: 'statistics', label: 'États Statistiques', icon: FileText },
+  { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3, color: 'text-blue-400' },
+  { id: 'vehicles', label: 'Véhicules', icon: Car, color: 'text-emerald-400' },
+  { id: 'fuel', label: 'Carburant', icon: Fuel, color: 'text-amber-400' },
+  { id: 'tickets', label: 'Tickets Réparation', icon: Wrench, color: 'text-red-400' },
+  { id: 'workorders', label: 'Ordres de Travail', icon: ClipboardList, color: 'text-violet-400' },
+  { id: 'expenses', label: 'Dépenses', icon: Receipt, color: 'text-rose-400' },
+  { id: 'planning', label: 'Planning Entretien', icon: Calendar, color: 'text-cyan-400' },
+  { id: 'gestionnaires', label: 'Gestionnaires', icon: UserCog, color: 'text-orange-400' },
+  { id: 'admin', label: 'Administratif', icon: FileText, color: 'text-teal-400' },
+  { id: 'statistics', label: 'États Statistiques', icon: FileText, color: 'text-indigo-400' },
 ];
 
 const bottomNavItems = [

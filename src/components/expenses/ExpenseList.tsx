@@ -95,8 +95,8 @@ export function ExpenseList() {
           <button
             onClick={() => {
               const data = expenses.map(e => ({
-                'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '',
-                'Catégorie': e.categorie, 'Prestataire': (e as any).prestataire?.nom || '',
+                'Date': e.date, 'Véhicule': e.vehicle?.immatriculation || '',
+                'Catégorie': e.categorie, 'Prestataire': e.prestataire?.nom || '',
                 'Montant (DZD)': e.montant, 'N° Facture': e.numero_facture || '',
                 'Mode Paiement': e.mode_paiement,
               }));
@@ -242,11 +242,11 @@ export function ExpenseList() {
               {expenses.map((expense) => (
                 <tr key={expense.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
                   <td className="py-3 px-4 text-sm">{expense.date}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{(expense as any).vehicle?.immatriculation || '-'}</td>
+                  <td className="py-3 px-4 text-sm font-medium">{expense.vehicle?.immatriculation || '-'}</td>
                   <td className="py-3 px-4">
                     <span className="badge-info">{expense.categorie}</span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-muted-foreground">{(expense as any).prestataire?.nom || '-'}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{expense.prestataire?.nom || '-'}</td>
                   <td className="py-3 px-4 text-sm font-bold text-right">{Number(expense.montant).toLocaleString()} DZD</td>
                   <td className="py-3 px-4 text-sm text-muted-foreground">{expense.numero_facture || '-'}</td>
                 </tr>

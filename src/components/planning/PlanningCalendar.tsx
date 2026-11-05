@@ -209,16 +209,16 @@ export function PlanningCalendar() {
                     <div className="flex-1 flex flex-wrap gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{(event as any).vehicle?.immatriculation || '-'}</span>
+                        <span className="font-medium">{event.vehicle?.immatriculation || '-'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="w-4 h-4" />
-                        {(event as any).prestataire?.nom || '-'}
+                        {event.prestataire?.nom || '-'}
                       </div>
-                      {(event as any).chauffeur && (
+                      {event.chauffeur && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <User className="w-4 h-4" />
-                          {(event as any).chauffeur.nom} {(event as any).chauffeur.prenom || ''}
+                          {event.chauffeur.nom} {event.chauffeur.prenom || ''}
                         </div>
                       )}
                     </div>

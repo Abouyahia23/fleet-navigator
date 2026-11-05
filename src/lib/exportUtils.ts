@@ -4,7 +4,7 @@ import { format } from 'date-fns';
  * Export an array of objects to CSV and trigger download.
  * Respects RLS: only data already fetched (user-visible) is exported.
  */
-export function exportToCsv(rows: Record<string, any>[], filename: string) {
+export function exportToCsv(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;
 
   const headers = Object.keys(rows[0]);

@@ -47,7 +47,7 @@ export function ReportExport() {
   const { data: sites = [] } = useSites();
   const { data: structures = [] } = useStructures();
 
-  const generateCSV = (data: any[], filename: string) => {
+  const generateCSV = (data: Record<string, unknown>[], filename: string) => {
     if (data.length === 0) { toast.error('Aucune donnée à exporter'); return; }
     const headers = Object.keys(data[0]);
     const csvContent = [
@@ -67,7 +67,7 @@ export function ReportExport() {
   };
 
   const handleExportExcel = () => {
-    let data: any[] = [];
+    let data: Record<string, unknown>[] = [];
     let filename = '';
 
     switch (reportType) {
@@ -80,25 +80,25 @@ export function ReportExport() {
         break;
       case 'fuel':
         data = fuelEntries.map(e => ({
-          'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '', 'KM Compteur': e.km_compteur, 'Distance': e.distance || '', 'Litres': e.litres, 'Montant (DZD)': e.montant, 'Station': (e as any).station?.nom || '', 'Consommation': e.consommation ? Number(e.consommation).toFixed(2) : '',
+          'Date': e.date, 'Véhicule': e.vehicle?.immatriculation || '', 'KM Compteur': e.km_compteur, 'Distance': e.distance || '', 'Litres': e.litres, 'Montant (DZD)': e.montant, 'Station': e.station?.nom || '', 'Consommation': e.consommation ? Number(e.consommation).toFixed(2) : '',
         }));
         filename = 'consommation_carburant';
         break;
       case 'expenses':
         data = expenses.map(e => ({
-          'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '', 'Catégorie': e.categorie, 'Prestataire': (e as any).prestataire?.nom || '', 'Montant (DZD)': e.montant, 'N° Facture': e.numero_facture || '',
+          'Date': e.date, 'Véhicule': e.vehicle?.immatriculation || '', 'Catégorie': e.categorie, 'Prestataire': e.prestataire?.nom || '', 'Montant (DZD)': e.montant, 'N° Facture': e.numero_facture || '',
         }));
         filename = 'depenses';
         break;
       case 'tickets':
         data = tickets.map(t => ({
-          'Numéro': t.numero, 'Date': t.date_demande, 'Véhicule': (t as any).vehicle?.immatriculation || '', 'Symptôme': t.symptome, 'Priorité': t.priorite, 'Statut': t.statut,
+          'Numéro': t.numero, 'Date': t.date_demande, 'Véhicule': t.vehicle?.immatriculation || '', 'Symptôme': t.symptome, 'Priorité': t.priorite, 'Statut': t.statut,
         }));
         filename = 'tickets_reparation';
         break;
       case 'workorders':
         data = workOrders.map(w => ({
-          'Numéro': w.numero, 'Date': w.date_ouverture, 'Véhicule': (w as any).vehicle?.immatriculation || '', 'Type': w.type, 'Description': w.description, 'Statut': w.statut, 'Devis': w.montant_devis || '', 'Facture': w.montant_facture || '',
+          'Numéro': w.numero, 'Date': w.date_ouverture, 'Véhicule': w.vehicle?.immatriculation || '', 'Type': w.type, 'Description': w.description, 'Statut': w.statut, 'Devis': w.montant_devis || '', 'Facture': w.montant_facture || '',
         }));
         filename = 'ordres_travail';
         break;

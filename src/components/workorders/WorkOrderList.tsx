@@ -204,8 +204,8 @@ export function WorkOrderList() {
                 </div>
                 <p className="font-medium">{wo.description}</p>
                 <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                  <span>🚗 {(wo as any).vehicle?.immatriculation || '-'}</span>
-                  <span>🏭 {(wo as any).prestataire?.nom || '-'}</span>
+                  <span>🚗 {wo.vehicle?.immatriculation || '-'}</span>
+                  <span>🏭 {wo.prestataire?.nom || '-'}</span>
                   {wo.date_rdv && <span>📅 RDV: {wo.date_rdv}</span>}
                   {wo.montant_devis && <span>💰 {Number(wo.montant_devis).toLocaleString()} DZD</span>}
                 </div>

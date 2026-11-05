@@ -138,8 +138,8 @@ export function UserManagement() {
       setShowCreateUser(false);
       setNewUser({ email: '', nom: '', prenom: '', role: 'utilisateur', password: '' });
       refetch();
-    } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la création du compte');
+    } catch (error: unknown) {
+      toast.error((error instanceof Error && error.message) || 'Erreur lors de la création du compte');
     } finally {
       setCreating(false);
     }
@@ -508,7 +508,7 @@ export function UserManagement() {
             </div>
             <div className="space-y-2">
               <Label>Rôle *</Label>
-              <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value as any }))}>
+              <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value as typeof prev.role }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

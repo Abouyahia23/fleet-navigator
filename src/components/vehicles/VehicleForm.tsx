@@ -10,16 +10,19 @@ import { useMyProfile } from '@/hooks/useMyProfile';
 import { useUserRole } from '@/hooks/useUserRole';
 import { uploadVehicleImage, deleteVehicleImage } from '@/lib/vehicleImageStorage';
 import { toast } from 'sonner';
-import type { TablesInsert } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 type VehicleInsert = TablesInsert<'vehicles'>;
+type Vehicle = Tables<'vehicles'>;
+// Form state is looser than the DB type: enum fields may be empty strings while editing.
+type VehicleFormData = { [K in keyof VehicleInsert]?: VehicleInsert[K] | string };
 
 const AFFECTATAIRE_TYPES = ['Chauffeur', 'Cadre', 'Parc auto de direction', 'Parc auto centrale'] as const;
 type AffectatireType = typeof AFFECTATAIRE_TYPES[number];
 
 interface VehicleFormProps {
-  vehicle?: any;
-  onSave: (vehicle: any) => void;
+  vehicle?: Vehicle | null;
+  onSave: (vehicle: VehicleInsert) => void;
   onCancel: () => void;
 }
 
@@ -33,7 +36,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const { profileId } = useMyProfile();
   const { isAdmin } = useUserRole();
 
-  const [formData, setFormData] = useState<Record<string, any>>({
+  const [formData, setFormData] = useState<VehicleFormData>({
     immatriculation: '',
     marque: '',
     modele: '',
@@ -88,7 +91,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      let finalData = { ...formData };
+      const finalData = { ...formData };
 
       // Upload image to Storage if a new file was selected
       if (imageFile) {
@@ -121,7 +124,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
           console.error('Error creating assignment history:', err);
         }
       }
-      onSave(finalData);
+      onSave(finalData as VehicleInsert);
     }
   };
 
@@ -225,7 +228,7 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
               <p className="text-sm text-muted-foreground">Aucun historique d'affectation</p>
             ) : (
               <div className="space-y-2">
-                {history.map((h: any) => (
+                {history.map((h) => (
                   <div key={h.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                     <div>
                       <p className="font-medium">{h.affectataire}</p>

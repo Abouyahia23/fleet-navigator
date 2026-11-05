@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -7,7 +8,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -18,6 +20,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

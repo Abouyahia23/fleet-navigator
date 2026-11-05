@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminExists } from '@/hooks/useAdminExists';
 import { AdminSetupForm } from '@/components/auth/AdminSetupForm';
@@ -15,9 +15,12 @@ import { toast } from 'sonner';
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn, signUp } = useAuth();
   const { adminExists, isLoading: checkingAdmin, refetch } = useAdminExists();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
+  const isPasswordReset = new URLSearchParams(location.search).get('reset') === 'true';
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function Auth() {
       });
     } else {
       toast.success('Connexion réussie');
-      navigate('/');
+      navigate(from, { replace: true });
     }
 
     setIsLoading(false);
@@ -90,6 +93,11 @@ export default function Auth() {
 
     setIsLoading(false);
   };
+
+  // Already signed in: go back to the requested page
+  if (!authLoading && user && !isPasswordReset) {
+    return <Navigate to={from} replace />;
+  }
 
   // Show loading while checking for admin
   if (checkingAdmin) {

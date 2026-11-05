@@ -83,8 +83,8 @@ export function VehicleList() {
   if (showForm) {
     return (
       <VehicleForm
-        vehicle={editingVehicle as any}
-        onSave={handleSave as any}
+        vehicle={editingVehicle}
+        onSave={handleSave}
         onCancel={() => {
           setShowForm(false);
           setEditingVehicle(null);

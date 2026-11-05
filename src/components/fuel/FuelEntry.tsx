@@ -126,11 +126,11 @@ export function FuelEntry() {
           <button
             onClick={() => {
               const data = entries.map(e => ({
-                'Date': e.date, 'Véhicule': (e as any).vehicle?.immatriculation || '',
+                'Date': e.date, 'Véhicule': e.vehicle?.immatriculation || '',
                 'Km Compteur': e.km_compteur, 'Distance': e.distance || '',
                 'Litres': e.litres, 'Montant (DZD)': e.montant,
                 'Conso (L/100km)': e.consommation ? Number(e.consommation).toFixed(2) : '',
-                'Station': (e as any).station?.nom || '',
+                'Station': e.station?.nom || '',
               }));
               if (!data.length) { toast.info('Aucune donnée à exporter'); return; }
               exportToCsv(data, 'carburant');
@@ -254,7 +254,7 @@ export function FuelEntry() {
                 <label className="block text-sm font-medium mb-1.5">Mode Paiement</label>
                 <select
                   value={formData.modePaiement}
-                  onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value as typeof formData.modePaiement })}
                   className="input-field"
                 >
                   <option value="Cash">Cash</option>
@@ -290,7 +290,7 @@ export function FuelEntry() {
               </button>
               <button
                 type="button"
-                onClick={(e) => handleSubmit(e as any, true)}
+                onClick={(e) => handleSubmit(e, true)}
                 className="btn-accent"
                 disabled={createFuelEntry.isPending}
               >
@@ -350,7 +350,7 @@ export function FuelEntry() {
                     <td className="py-3 px-4 text-sm">
                       <span className="badge-info">{entry.consommation ? Number(entry.consommation).toFixed(2) : '-'} L/100km</span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{(entry as any).station?.nom || '-'}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">{entry.station?.nom || '-'}</td>
                   </tr>
                 ))}
               </tbody>

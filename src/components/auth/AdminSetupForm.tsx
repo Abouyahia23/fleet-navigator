@@ -100,10 +100,10 @@ export function AdminSetupForm({ onComplete }: AdminSetupFormProps) {
       } else {
         onComplete();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Admin creation error:', error);
       toast.error('Erreur lors de la création', {
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);

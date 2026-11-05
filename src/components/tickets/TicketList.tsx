@@ -115,7 +115,7 @@ export function TicketList() {
             onClick={() => {
               const data = filteredTickets.map(t => ({
                 'Numéro': t.numero, 'Date': t.date_demande,
-                'Véhicule': (t as any).vehicle?.immatriculation || '',
+                'Véhicule': t.vehicle?.immatriculation || '',
                 'Symptôme': t.symptome, 'Priorité': t.priorite,
                 'Statut': t.statut, 'Km': t.km || '',
               }));
@@ -229,9 +229,9 @@ export function TicketList() {
               <div className="flex-1">
                 <p className="font-medium">{ticket.symptome}</p>
                 <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                  <span>🚗 {(ticket as any).vehicle?.immatriculation || '-'}</span>
+                  <span>🚗 {ticket.vehicle?.immatriculation || '-'}</span>
                   <span>📊 {ticket.km || '-'} km</span>
-                  {(ticket as any).chauffeur && <span>👤 {(ticket as any).chauffeur.nom} {(ticket as any).chauffeur.prenom || ''}</span>}
+                  {ticket.chauffeur && <span>👤 {ticket.chauffeur.nom} {ticket.chauffeur.prenom || ''}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-3">

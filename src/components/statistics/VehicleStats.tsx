@@ -113,7 +113,7 @@ export function VehicleStats() {
                       <TableCell>{new Date(wo.date_ouverture).toLocaleDateString('fr-FR')}</TableCell>
                       <TableCell><Badge variant={wo.type === 'Préventif' ? 'default' : 'secondary'}>{wo.type}</Badge></TableCell>
                       <TableCell className="max-w-[200px] truncate">{wo.description}</TableCell>
-                      <TableCell>{(wo as any).prestataire?.nom || '-'}</TableCell>
+                      <TableCell>{wo.prestataire?.nom || '-'}</TableCell>
                       <TableCell className="text-right">{wo.montant_facture ? Number(wo.montant_facture).toLocaleString() : '-'} DZD</TableCell>
                     </TableRow>
                   ))}
